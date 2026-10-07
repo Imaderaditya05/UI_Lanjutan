@@ -80,6 +80,25 @@ const routes = [
       },
     ],
   },
+
+  // =========================================
+  // DASHBOARD / ORGANIZER
+  // =========================================
+  {
+    path: '/dashboard',
+    component: () => import('@/layout/DashboardLayout.vue'),
+
+    children: [
+      {
+        path: '',
+        name: 'dashboard',
+        component: () => import('@/views/Dashboard.vue'),
+        meta: {
+          breadcrumb: 'Dashboard',
+        },
+      },
+    ],
+  },
 ]
 
 const router = createRouter({

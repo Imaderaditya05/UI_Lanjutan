@@ -1,49 +1,62 @@
 <template>
   <div class="event-detail-page">
 
-    <!-- Back Button -->
-    <button class="btn-back" @click="$router.back()">
+    <!-- =========================================
+         BACK BUTTON
+    ========================================== -->
+    <button
+      class="btn-back"
+      @click="$router.push('/browse/events')"
+    >
       ← Back to Events
     </button>
 
-    <!-- Event Header -->
+
+    <!-- =========================================
+         EVENT HEADER
+    ========================================== -->
     <section class="detail-header">
+
       <div class="header-content">
 
         <span class="event-tag">
-          Technology
+          Workshop & Training
         </span>
 
         <h1>
-          Tech Innovation Summit 2026
+          Vue.js Mastery Workshop {{ route.params.id }}
         </h1>
 
         <div class="meta-info">
 
-          <div class="meta-item">
-            📅
-            <span>15 October 2026</span>
-          </div>
+          <span class="meta-item">
+            📅 October 12, 2026
+          </span>
 
-          <div class="meta-item">
-            🕐
-            <span>09:00 AM - 05:00 PM</span>
-          </div>
+          <span class="meta-item">
+            📍 Tech Hub, Jakarta Pusat
+          </span>
 
-          <div class="meta-item">
-            📍
-            <span>Jakarta Convention Center</span>
-          </div>
+          <span class="meta-item">
+            👥 Quota: 150 Attendees
+          </span>
 
         </div>
 
       </div>
+
     </section>
 
-    <!-- Main Content -->
-    <div class="detail-content">
 
-      <!-- Main Description -->
+    <!-- =========================================
+         ASYMMETRICAL LAYOUT
+    ========================================== -->
+    <div class="detail-content grid-asymmetric">
+
+      <!-- =======================================
+           MAIN DESCRIPTION
+           F-PATTERN
+      ======================================== -->
       <main class="main-desc">
 
         <h2>
@@ -51,18 +64,26 @@
         </h2>
 
         <p>
-          Join us at the Tech Innovation Summit 2026 and discover
-          the latest innovations, technologies, and digital trends
-          that are shaping the future.
+          Welcome to the biggest web interface development training
+          event of the year! Gatherly is collaborating with the local
+          developer community to host a comprehensive workshop designed
+          specifically to bring together professionals, enthusiasts,
+          and students.
         </p>
 
         <p>
-          This event brings together technology enthusiasts,
-          industry professionals, entrepreneurs, and innovators
-          to share knowledge, ideas, and experiences.
+          In this session, we will discuss various current industry
+          challenges, dissect the implementation of Single Page
+          Applications (SPA), and practice hands-on Layout System
+          design prioritizing visual hierarchy. You will gain practical
+          insights that can be directly applied to your future projects
+          or career.
         </p>
 
-        <!-- Agenda -->
+
+        <!-- =====================================
+             EVENT AGENDA
+        ====================================== -->
         <h2 class="agenda-title">
           Event Agenda
         </h2>
@@ -71,61 +92,61 @@
 
           <li>
             <strong>09:00 AM</strong>
-            Registration & Networking
+            Registration & QR Check-in Scanning
           </li>
 
           <li>
             <strong>10:00 AM</strong>
-            Opening & Keynote Session
+            Session 1: Vue Router & Navigation Fundamentals
           </li>
 
           <li>
             <strong>11:30 AM</strong>
-            Technology Innovation Panel
+            Coffee Break & Networking Session
           </li>
 
           <li>
             <strong>01:00 PM</strong>
-            Lunch Break
+            Session 2: Layout System & Grid Implementation
           </li>
 
           <li>
-            <strong>02:00 PM</strong>
-            Workshop & Discussion
-          </li>
-
-          <li>
-            <strong>04:00 PM</strong>
-            Closing & Networking
+            <strong>03:00 PM</strong>
+            Q&A & Closing Remarks
           </li>
 
         </ul>
 
       </main>
 
-      <!-- Ticket Sidebar -->
+
+      <!-- =======================================
+           TICKET SIDEBAR
+           FOCAL POINT & STICKY PANE
+      ======================================== -->
       <aside class="sidebar">
 
-        <div class="ticket-card">
+        <div class="ticket-card sticky-pane">
 
           <h3>
-            Get Your Ticket
+            Attendee Registration
           </h3>
 
-          <div class="price">
-            Rp 150.000
-          </div>
-
-          <p class="ticket-desc">
-            Secure your spot and join this exciting event.
+          <p class="price">
+            Free
           </p>
 
+          <p class="ticket-desc">
+            Secure your seat now before the quota is full.
+          </p>
+
+          <!-- STRONGEST FOCAL POINT -->
           <button class="btn-register">
             Register Now
           </button>
 
           <p class="spots">
-            🔥 Only 25 spots left
+            Only 12 seats left!
           </p>
 
         </div>
@@ -137,292 +158,527 @@
   </div>
 </template>
 
+
 <script setup>
-// Event Detail Page
+
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
 </script>
 
+
 <style scoped>
+
+/* =========================================
+   EVENT DETAIL PAGE
+========================================= */
+
 .event-detail-page {
+
   animation: fadeIn 0.5s ease;
+
 }
 
-/* ==============================
+
+/* =========================================
    BACK BUTTON
-============================== */
+========================================= */
 
 .btn-back {
+
   background: none;
+
   border: none;
-  color: #666;
+
   font-size: 1rem;
-  font-weight: 500;
+
   cursor: pointer;
-  margin-bottom: 2rem;
-  transition: color 0.2s;
+
+  margin-bottom: var(--space-6);
+
+  color: var(--text-muted);
+
+  font-weight: 500;
+
   padding: 0;
+
+  transition: color 0.2s ease;
+
 }
+
 
 .btn-back:hover {
-  color: #6644ff;
+
+  color: var(--primary);
+
 }
 
-/* ==============================
+
+/* =========================================
    EVENT HEADER
-============================== */
+========================================= */
 
 .detail-header {
-  background: #fdfdfd;
-  border-radius: 20px;
-  border: 1px solid #f0f0f0;
-  padding: 4rem 3rem;
-  margin-bottom: 3rem;
+
+  background: var(--bg-light);
+
+  border-radius: var(--space-4);
+
+  border: 1px solid var(--border-color);
+
+  padding: var(--space-12);
+
+  margin-bottom: var(--space-8);
+
 }
+
 
 .header-content {
+
   max-width: 800px;
+
 }
+
+
+/* =========================================
+   EVENT TAG
+========================================= */
 
 .event-tag {
+
   display: inline-block;
+
   background: rgba(102, 68, 255, 0.1);
-  color: #6644ff;
-  padding: 0.4rem 1rem;
+
+  color: var(--primary);
+
+  padding: var(--space-1) var(--space-4);
+
   border-radius: 50px;
+
   font-weight: 600;
+
   font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+
+  margin-bottom: var(--space-4);
+
 }
 
-.header-content h1 {
-  color: #1c1948;
+
+/* =========================================
+   EVENT TITLE
+========================================= */
+
+.detail-header h1 {
+
+  color: var(--text-main);
+
   font-size: 2.8rem;
-  margin-bottom: 2rem;
+
+  margin-bottom: var(--space-6);
+
   line-height: 1.2;
+
 }
 
-/* ==============================
+
+/* =========================================
    META INFORMATION
-============================== */
+========================================= */
 
 .meta-info {
+
   display: flex;
+
   flex-wrap: wrap;
-  gap: 2rem;
+
+  gap: var(--space-6);
+
 }
+
 
 .meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  color: #555;
+
+  color: var(--text-muted);
+
   font-weight: 500;
+
   font-size: 1.05rem;
+
 }
 
-/* ==============================
-   DETAIL CONTENT
-============================== */
 
-.detail-content {
-  display: flex;
-  gap: 4rem;
+/* =========================================
+   ASYMMETRICAL LAYOUT
+========================================= */
+
+.grid-asymmetric {
+
+  /*
+   * ASYMMETRICAL LAYOUT
+   *
+   * Kolom kiri lebih besar untuk informasi.
+   * Kolom kanan menjadi area konversi/tiket.
+   */
+
+  display: grid;
+
+  grid-template-columns: 2fr 1fr;
+
+  gap: var(--space-12);
+
 }
 
-/* ==============================
+
+/* =========================================
    MAIN DESCRIPTION
-============================== */
+   F-PATTERN
+========================================= */
 
 .main-desc {
-  flex: 2;
+
+  min-width: 0;
+
 }
+
+
+/* =========================================
+   CONTENT HEADING
+========================================= */
 
 .main-desc h2 {
-  color: #1c1948;
-  margin-bottom: 1.5rem;
+
+  color: var(--text-main);
+
+  margin-bottom: var(--space-4);
+
   font-size: 1.8rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+
+  border-left: 4px solid var(--primary);
+
+  padding-left: var(--space-2);
+
 }
 
-.main-desc h2::before {
-  content: "";
-  display: block;
-  width: 20px;
-  height: 4px;
-  background: #6644ff;
-  border-radius: 2px;
-}
 
 .main-desc p {
+
   color: #444;
+
   line-height: 1.8;
-  margin-bottom: 1.5rem;
+
+  margin-bottom: var(--space-6);
+
   font-size: 1.05rem;
+
 }
 
-/* ==============================
-   AGENDA
-============================== */
+
+/* =========================================
+   EVENT AGENDA
+========================================= */
 
 .agenda-title {
-  margin-top: 3rem;
+
+  margin-top: var(--space-12);
+
 }
+
 
 .agenda-list {
+
   list-style: none;
+
   padding: 0;
+
   margin: 0;
+
 }
+
 
 .agenda-list li {
-  padding: 1rem 0;
-  border-bottom: 1px solid #f0f0f0;
-  color: #444;
+
+  padding: var(--space-4) 0;
+
+  border-bottom:
+    1px solid var(--border-color);
+
+  color: var(--text-muted);
+
   font-size: 1.05rem;
+
 }
+
 
 .agenda-list li strong {
+
   display: inline-block;
+
   min-width: 100px;
-  color: #1c1948;
+
+  color: var(--text-main);
+
 }
 
-/* ==============================
+
+/* =========================================
    SIDEBAR
-============================== */
+========================================= */
 
 .sidebar {
-  flex: 1;
+
+  min-width: 0;
+
 }
 
-/* ==============================
+
+/* =========================================
+   STICKY PANE
+========================================= */
+
+.sticky-pane {
+
+  /*
+   * Sticky Pane
+   *
+   * Kartu tiket tetap berada pada area
+   * yang terlihat ketika halaman di-scroll.
+   */
+
+  position: sticky;
+
+  top: 100px;
+
+}
+
+
+/* =========================================
    TICKET CARD
-============================== */
+   FOCAL POINT
+========================================= */
 
 .ticket-card {
+
   background: white;
-  padding: 2.5rem;
-  border-radius: 16px;
-  border: 1px solid #f0f0f0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+
+  padding: var(--space-8);
+
+  border-radius: var(--space-4);
+
+  border:
+    1px solid var(--border-color);
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.06);
+
   text-align: center;
-  position: sticky;
-  top: 100px;
+
 }
+
+
+/* =========================================
+   TICKET TITLE
+========================================= */
 
 .ticket-card h3 {
-  color: #1c1948;
+
   font-size: 1.5rem;
-  margin-bottom: 1rem;
+
+  color: var(--text-main);
+
+  margin-bottom: var(--space-2);
+
 }
 
-/* ==============================
+
+/* =========================================
    PRICE
-============================== */
+========================================= */
 
 .price {
+
   font-size: 2.8rem;
+
   font-weight: 800;
-  color: #6644ff;
-  margin-bottom: 0.5rem;
+
+  color: var(--primary);
+
+  margin-bottom: var(--space-2);
+
 }
+
+
+/* =========================================
+   TICKET DESCRIPTION
+========================================= */
 
 .ticket-desc {
-  color: #666;
-  margin-bottom: 2rem;
+
+  color: var(--text-muted);
+
+  margin-bottom: var(--space-6);
+
 }
 
-/* ==============================
+
+/* =========================================
    REGISTER BUTTON
-============================== */
+   STRONGEST FOCAL POINT
+========================================= */
 
 .btn-register {
+
   width: 100%;
-  padding: 1.2rem;
-  background: #1c1948;
+
+  padding: var(--space-4);
+
+  background: var(--primary);
+
   color: white;
+
   border: none;
+
   border-radius: 12px;
+
   font-size: 1.1rem;
+
   font-weight: 600;
+
   cursor: pointer;
-  transition: background 0.3s;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+
 }
+
 
 .btn-register:hover {
-  background: #6644ff;
+
+  background: var(--primary-hover);
+
+  transform: translateY(-2px);
+
 }
 
-/* ==============================
+
+/* =========================================
    AVAILABLE SPOTS
-============================== */
+========================================= */
 
 .spots {
-  margin-top: 1.5rem;
+
+  margin-top: var(--space-4);
+
   color: #e63946;
+
   font-weight: 600;
+
   font-size: 0.95rem;
+
 }
 
-/* ==============================
+
+/* =========================================
    ANIMATION
-============================== */
+========================================= */
 
 @keyframes fadeIn {
+
   from {
+
     opacity: 0;
+
     transform: translateY(10px);
+
   }
 
   to {
+
     opacity: 1;
+
     transform: translateY(0);
+
   }
+
 }
 
-/* ==============================
+
+/* =========================================
    RESPONSIVE
-============================== */
+========================================= */
 
 @media (max-width: 900px) {
-  .detail-content {
-    flex-direction: column;
+
+  .grid-asymmetric {
+
+    grid-template-columns: 1fr;
+
   }
+
 
   .detail-header {
-    padding: 3rem 2rem;
+
+    padding: var(--space-8);
+
   }
 
-  .header-content h1 {
+
+  .detail-header h1 {
+
     font-size: 2.2rem;
+
   }
 
-  .ticket-card {
+
+  .sticky-pane {
+
     position: static;
+
   }
+
 }
+
 
 @media (max-width: 600px) {
+
   .detail-header {
-    padding: 2rem 1.5rem;
+
+    padding: var(--space-6);
+
   }
 
-  .header-content h1 {
+
+  .detail-header h1 {
+
     font-size: 1.8rem;
+
   }
+
 
   .meta-info {
+
     flex-direction: column;
-    gap: 1rem;
+
+    gap: var(--space-3);
+
   }
 
-  .detail-content {
-    gap: 2rem;
+
+  .grid-asymmetric {
+
+    gap: var(--space-8);
+
   }
+
 
   .ticket-card {
-    padding: 2rem 1.5rem;
+
+    padding: var(--space-6);
+
   }
+
 }
+
 </style>
