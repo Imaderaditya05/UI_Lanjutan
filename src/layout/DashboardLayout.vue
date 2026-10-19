@@ -1,415 +1,216 @@
 
+<script setup lang="ts">
+import { RouterView, RouterLink } from 'vue-router'
+</script>
+
 <template>
-  <!-- =========================================
-       RAIL & PANE SYSTEM
-  ========================================== -->
   <div class="dashboard-layout">
-
-    <!-- =======================================
-         RAIL
-         Navigasi samping tetap
-    ======================================== -->
+    <!-- RAIL: Navigasi samping -->
     <aside class="dashboard-rail">
-
-      <!-- Brand -->
       <div class="rail-brand">
-        <router-link to="/">
-          Gatherly Organizer
-        </router-link>
+        <router-link to="/">Gatherly Organizer</router-link>
       </div>
 
-
-      <!-- Navigation -->
       <nav class="rail-nav">
-
         <router-link
           to="/dashboard"
           class="rail-link"
-          active-class="active"
+          exact-active-class="active"
         >
-          Overview
+          Dashboard
         </router-link>
-
-        <a
-          href="#"
-          class="rail-link"
-        >
-          My Events
-        </a>
-
-        <a
-          href="#"
-          class="rail-link"
-        >
-          Attendees
-        </a>
-
-        <a
-          href="#"
-          class="rail-link"
-        >
-          QR Check-in
-        </a>
-
-      </nav>
-
-
-      <!-- Footer -->
-      <div class="rail-footer">
 
         <router-link
-          to="/"
+          to="/dashboard/events"
           class="rail-link"
+          active-class="active"
         >
-          ← Back to Public
+          Event Management
         </router-link>
+      </nav>
 
+      <div class="rail-footer">
+        <router-link to="/" class="rail-link">
+          &larr; Back to Public
+        </router-link>
       </div>
-
     </aside>
 
-
-    <!-- =======================================
-         PANE
-         Area utama yang dapat di-scroll
-    ======================================== -->
+    <!-- PANE: Area utama -->
     <main class="dashboard-pane">
-
-      <!-- Header -->
       <header class="pane-header">
-
-        <h1>
-          Dashboard
-        </h1>
-
-        <div class="user-profile">
-          Admin
-        </div>
-
+        <h1>Dashboard</h1>
+        <div class="user-profile">Admin</div>
       </header>
 
-
-      <!-- Dynamic Content -->
       <div class="pane-content">
-
         <RouterView />
-
       </div>
-
     </main>
-
   </div>
 </template>
 
-
 <style scoped>
-
-/* =========================================
-   DASHBOARD LAYOUT
-   RAIL & PANE SYSTEM
-========================================= */
-
+/* DASHBOARD LAYOUT */
 .dashboard-layout {
-
-  /*
-   * Rail & Pane menggunakan Flexbox.
-   * Rail berada di kiri,
-   * Pane berada di kanan.
-   */
-
   display: flex;
-
-  width: 100%;
-
   height: 100vh;
-
-  /*
-   * Mengunci halaman agar tidak
-   * melakukan scroll secara global.
-   */
-
   overflow: hidden;
-
-  background: #f8f8fb;
+  background-color: var(--bg-gray, #f8f8fb);
 }
 
-
-/* =========================================
-   RAIL / SIDEBAR
-========================================= */
-
+/* SIDEBAR */
 .dashboard-rail {
-
-  /*
-   * Sidebar memiliki ukuran tetap.
-   */
-
   width: 260px;
-
   min-width: 260px;
-
   height: 100vh;
-
-  background: #1c1948;
-
+  box-sizing: border-box;
+  background-color: #1c1948;
   color: white;
-
   display: flex;
-
   flex-direction: column;
-
   padding: 2rem 1.2rem;
 }
 
-
-/* =========================================
-   BRAND
-========================================= */
-
+/* BRAND */
 .rail-brand {
-
   margin-bottom: 2.5rem;
-
-  padding:
-    0 0.8rem;
+  padding: 0 0.8rem;
 }
 
-
 .rail-brand a {
-
   color: white;
-
   text-decoration: none;
-
-  font-size: 1.3rem;
-
+  font-size: 1.2rem;
   font-weight: 800;
 }
 
-
-/* =========================================
-   NAVIGATION
-========================================= */
-
+/* NAVIGATION */
 .rail-nav {
-
   display: flex;
-
   flex-direction: column;
-
   gap: 0.5rem;
 }
 
-
 .rail-link {
-
   display: block;
-
-  padding:
-    0.9rem 1rem;
-
+  padding: 0.9rem 1rem;
   border-radius: 10px;
-
   color: #d8d7e8;
-
   text-decoration: none;
-
   font-size: 0.95rem;
-
   font-weight: 500;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-
 
 .rail-link:hover {
-
-  background:
-    rgba(255, 255, 255, 0.08);
-
+  background: rgba(255, 255, 255, 0.08);
   color: white;
 }
-
-
-/* Active Navigation */
 
 .rail-link.active {
-
   background: #6644ff;
-
   color: white;
+  border-left: 4px solid var(--primary, #a18aff);
 }
 
-
-/* =========================================
-   RAIL FOOTER
-========================================= */
-
+/* FOOTER */
 .rail-footer {
-
   margin-top: auto;
-
   padding-top: 1rem;
-
-  border-top:
-    1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-
-/* =========================================
-   MAIN PANE
-========================================= */
-
+/* MAIN PANE */
 .dashboard-pane {
-
-  /*
-   * Pane mengambil seluruh sisa ruang.
-   */
-
   flex: 1;
-
   min-width: 0;
-
   height: 100vh;
-
-  /*
-   * Hanya area ini yang dapat
-   * melakukan scrolling.
-   */
-
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
-
   overflow-x: hidden;
 }
 
-
-/* =========================================
-   PANE HEADER
-========================================= */
-
+/* HEADER */
 .pane-header {
-
-  height: 80px;
-
+  min-height: 80px;
+  box-sizing: border-box;
   background: white;
-
-  border-bottom:
-    1px solid #eee;
-
+  border-bottom: 1px solid #eee;
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
-
-  padding:
-    0 2.5rem;
-
+  padding: 0 2.5rem;
   position: sticky;
-
   top: 0;
-
   z-index: 10;
 }
 
-
 .pane-header h1 {
-
   color: #1c1948;
-
-  font-size: 1.7rem;
-
+  font-size: 1.5rem;
   margin: 0;
 }
 
-
-/* =========================================
-   USER PROFILE
-========================================= */
-
+/* USER PROFILE */
 .user-profile {
-
   background: #f1edff;
-
   color: #6644ff;
-
-  padding:
-    0.6rem 1rem;
-
+  padding: 0.6rem 1rem;
   border-radius: 10px;
-
   font-weight: 600;
 }
 
-
-/* =========================================
-   PANE CONTENT
-========================================= */
-
+/* CONTENT */
 .pane-content {
-
+  flex: 1;
   padding: 2.5rem;
 }
 
-
-/* =========================================
-   RESPONSIVE
-========================================= */
-
+/* RESPONSIVE */
 @media (max-width: 768px) {
-
   .dashboard-rail {
-
     width: 210px;
-
     min-width: 210px;
-
-    padding:
-      1.5rem 0.8rem;
+    padding: 1.5rem 0.8rem;
   }
-
 
   .pane-header {
-
-    padding:
-      0 1.5rem;
+    padding: 0 1.5rem;
   }
-
 
   .pane-content {
-
     padding: 1.5rem;
   }
-
 }
-
 
 @media (max-width: 600px) {
-
   .dashboard-rail {
-
-    width: 180px;
-
-    min-width: 180px;
+    width: 160px;
+    min-width: 160px;
+    padding: 1rem 0.5rem;
   }
 
+  .rail-brand {
+    padding: 0 0.5rem;
+  }
 
   .rail-brand a {
-
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
-
 
   .rail-link {
-
-    font-size: 0.85rem;
-
-    padding:
-      0.7rem;
+    font-size: 0.8rem;
+    padding: 0.7rem 0.5rem;
   }
 
-}
+  .pane-header {
+    padding: 0 1rem;
+  }
 
+  .pane-content {
+    padding: 1rem;
+  }
+}
 </style>

@@ -1,85 +1,57 @@
+
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useEvents } from '@/composables/useEvents'
 
 import EventCard from '@/components/event/EventCard.vue'
 import SearchBar from '@/components/event/SearchBar.vue'
 import CategoryFilter from '@/components/event/CategoryFilter.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
 
-const events = [
-  {
-    id: 1,
-    title: 'Vue.js Mastery Workshop',
-    date: 'Oct 12, 2026',
-    loc: '📍 Tech Hub, Jakarta',
-    cat: 'Workshop',
-    desc: 'Learn advanced Vue 3 concepts, Composition API, and state management to build high-performance web applications interactively.',
-  },
-  {
-    id: 2,
-    title: 'National Tech Meetup',
-    date: 'Oct 15, 2026',
-    loc: '📍 Main Auditorium, City Center',
-    cat: 'Meetup',
-    desc: 'A gathering of hundreds of developers and technology enthusiasts to share the latest industry trends and expand professional networks.',
-  },
-  {
-    id: 3,
-    title: 'Startup Pitch Competition',
-    date: 'Nov 02, 2026',
-    loc: '📍 Innovation Center',
-    cat: 'Competition',
-    desc: 'Watch the best local startup founders pitch their innovative ideas live in front of a panel of renowned investors.',
-  },
-  {
-    id: 4,
-    title: 'UI/UX Design Sprint',
-    date: 'Nov 10, 2026',
-    loc: '📍 Creative Studio',
-    cat: 'Workshop',
-    desc: 'A hands-on session on designing user interfaces and implementing visual hierarchy principles.',
-  },
-  {
-    id: 5,
-    title: 'Digital Marketing Seminar',
-    date: 'Nov 20, 2026',
-    loc: '📍 Grand Hotel Hall',
-    cat: 'Seminar',
-    desc: 'An in-depth seminar discussing modern digital marketing strategies, from SEO optimization to user conversion tactics.',
-  },
-  {
-    id: 6,
-    title: 'Community Leaders Summit',
-    date: 'Dec 05, 2026',
-    loc: '📍 Gatherly HQ',
-    cat: 'Conference',
-    desc: 'An exclusive year-end conference for community leaders to formulate sustainable ecosystem development strategies.',
-  },
-]
+// Mengambil data event dari shared composable
+const { activeEvents } = useEvents()
 
+// Search dan category filter
 const searchQuery = ref('')
 const selectedCategory = ref('All')
 
-const categories = ['All', 'Workshop', 'Meetup', 'Competition', 'Seminar', 'Conference']
+const categories = [
+  'All',
+  'Workshop',
+  'Meetup',
+  'Competition',
+  'Seminar',
+  'Conference',
+]
 
+// Filter event secara reaktif
 const filteredEvents = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
-  return events.filter((event) => {
-    const matchSearch =
-      event.title.toLowerCase().includes(query) ||
-      event.loc.toLowerCase().includes(query) ||
-      event.cat.toLowerCase().includes(query) ||
-      event.desc.toLowerCase().includes(query)
+  return activeEvents.value.filter((event) => {
+    const title = (event.title || '').toLowerCase()
+    const location = (event.loc || '').toLowerCase()
+    const category = (event.cat || '').toLowerCase()
+    const description = (event.desc || '').toLowerCase()
 
-    const matchCategory = selectedCategory.value === 'All' || event.cat === selectedCategory.value
+    const matchSearch =
+      title.includes(query) ||
+      location.includes(query) ||
+      category.includes(query) ||
+      description.includes(query)
+
+    const matchCategory =
+      selectedCategory.value === 'All' ||
+      event.cat === selectedCategory.value
 
     return matchSearch && matchCategory
   })
 })
 
+// Navigasi ke halaman detail event
 function handleViewDetail(id) {
   router.push(`/browse/events/${id}`)
 }
@@ -87,20 +59,32 @@ function handleViewDetail(id) {
 
 <template>
   <div class="event-list-page">
+    <!-- Header -->
     <div class="header-section">
-      <h2 class="section-title">Upcoming Events</h2>
+      <h2 class="section-title">
+        Upcoming Events
+      </h2>
+
       <p class="section-desc">
         Discover workshops, seminars, tech meetups, and competitions near you.
       </p>
     </div>
 
+    <!-- Search and Category Filter -->
     <div class="filters-section">
       <SearchBar v-model="searchQuery" />
 
-      <CategoryFilter :categories="categories" v-model="selectedCategory" />
+      <CategoryFilter
+        :categories="categories"
+        v-model="selectedCategory"
+      />
     </div>
 
-    <div class="event-grid" v-if="filteredEvents.length > 0">
+    <!-- Active Event Grid -->
+    <div
+      v-if="filteredEvents.length > 0"
+      class="event-grid"
+    >
       <EventCard
         v-for="event in filteredEvents"
         :key="event.id"
@@ -109,8 +93,34 @@ function handleViewDetail(id) {
       />
     </div>
 
-    <div v-else class="empty-state">
-      <p>No events found matching your criteria.</p>
+    <!-- Empty State -->
+    <div
+      v-else
+      class="empty-state"
+    >
+      <div class="empty-icon">📊</div>
+
+      <h3>No Events Available Yet</h3>
+
+      <p>
+        {{
+          searchQuery || selectedCategory !== 'All'
+            ? 'No events match your search or selected category. Try changing your filters.'
+            : 'There are currently no active events scheduled. Are you an organizer? Publish and manage your first event through the Dashboard!'
+        }}
+      </p>
+
+      <div
+        v-if="!searchQuery && selectedCategory === 'All'"
+        class="empty-action"
+      >
+        <AppButton
+          variant="primary"
+          @click="router.push('/dashboard')"
+        >
+          Go to Organizer Dashboard →
+        </AppButton>
+      </div>
     </div>
   </div>
 </template>
@@ -121,6 +131,7 @@ function handleViewDetail(id) {
   animation: fadeIn 0.4s ease;
 }
 
+/* Header */
 .header-section {
   margin-bottom: var(--space-8);
 }
@@ -138,10 +149,15 @@ function handleViewDetail(id) {
   line-height: 1.6;
 }
 
+/* Filters */
 .filters-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
 
+/* Adaptive Event Grid */
 .event-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -149,15 +165,42 @@ function handleViewDetail(id) {
   width: 100%;
 }
 
+/* Empty State */
 .empty-state {
-  padding: var(--space-12);
   text-align: center;
+  padding: var(--space-12) var(--space-8);
   color: var(--text-muted);
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
+  background: white;
   border-radius: var(--space-4);
+  border: 1px dashed var(--border-color);
+  max-width: 600px;
+  margin: var(--space-8) auto;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
 
+.empty-icon {
+  font-size: 3.5rem;
+  margin-bottom: var(--space-3);
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  color: var(--text-main);
+  margin: 0 0 var(--space-2);
+}
+
+.empty-state p {
+  line-height: 1.6;
+  margin: 0 0 var(--space-6);
+  font-size: 1rem;
+}
+
+.empty-action {
+  display: flex;
+  justify-content: center;
+}
+
+/* Animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -170,6 +213,7 @@ function handleViewDetail(id) {
   }
 }
 
+/* Responsive */
 @media (max-width: 700px) {
   .section-title {
     font-size: 1.7rem;
@@ -181,6 +225,10 @@ function handleViewDetail(id) {
 
   .event-grid {
     grid-template-columns: 1fr;
+  }
+
+  .empty-state {
+    padding: var(--space-8) var(--space-4);
   }
 }
 </style>

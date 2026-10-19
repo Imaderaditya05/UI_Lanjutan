@@ -1,11 +1,18 @@
 
 <script setup>
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AppCard from '@/components/ui/AppCard.vue'
+import { useEvents } from '@/composables/useEvents'
 import AppButton from '@/components/ui/AppButton.vue'
+import AppCard from '@/components/ui/AppCard.vue'
 
 const route = useRoute()
 const router = useRouter()
+
+const { getEventById } = useEvents()
+
+// Mengambil data event berdasarkan ID di URL
+const event = computed(() => getEventById(route.params.id))
 
 const agenda = [
   {
@@ -35,6 +42,8 @@ function goBack() {
 }
 
 function registerEvent() {
+  if (!event.value || event.value.done) return
+
   alert('Registration feature will be available soon!')
 }
 </script>
@@ -46,75 +55,139 @@ function registerEvent() {
       &larr; Back to Events
     </button>
 
-    <!-- Event Header -->
-    <section class="detail-header">
-      <div class="header-content">
-        <span class="event-tag">Workshop & Training</span>
+    <!-- Event Found -->
+    <template v-if="event">
+      <!-- Event Header -->
+      <section class="detail-header">
+        <div class="header-content">
+          <div class="header-tags">
+            <span class="event-tag">
+              {{ event.cat }}
+            </span>
 
-        <h1>Vue.js Mastery Workshop {{ route.params.id }}</h1>
+            <span
+              v-if="event.done"
+              class="status-tag status-ended"
+            >
+              Event Finished
+            </span>
 
-        <div class="meta-info">
-          <span class="meta-item">📅 October 12, 2026</span>
-          <span class="meta-item">📍 Tech Hub, Jakarta Pusat</span>
-          <span class="meta-item">🎟️ Quota: 150 Attendees</span>
+            <span
+              v-else
+              class="status-tag status-live"
+            >
+              Open Registration
+            </span>
+          </div>
+
+          <h1>{{ event.title }}</h1>
+
+          <div class="meta-info">
+            <span class="meta-item">
+              📅 {{ event.date }}
+            </span>
+
+            <span class="meta-item">
+              📍 {{ event.loc }}
+            </span>
+
+            <span class="meta-item">
+              🎟️ Quota: {{ event.quota }} Attendees
+            </span>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Asymmetrical Layout -->
-    <div class="detail-content grid-asymmetric">
-      <!-- Main Description -->
-      <main class="main-desc">
-        <h2>About This Event</h2>
+      <!-- Asymmetrical Layout -->
+      <div class="detail-content grid-asymmetric">
+        <!-- Main Description -->
+        <main class="main-desc">
+          <h2>About This Event</h2>
 
-        <p>
-          Welcome to the biggest web interface development training event
-          of the year! Gatherly is collaborating with the local developer
-          community to host a comprehensive workshop designed specifically
-          to bring together professionals, enthusiasts, and students.
-        </p>
-
-        <p>
-          In this session, we will discuss various current industry
-          challenges, dissect the implementation of Single Page Applications
-          (SPA), and practice hands-on Layout System design prioritizing
-          visual hierarchy. You will gain practical insights that can be
-          directly applied to your future projects or career.
-        </p>
-
-        <!-- Event Agenda -->
-        <h2 class="agenda-title">Event Agenda</h2>
-
-        <ul class="agenda-list">
-          <li v-for="item in agenda" :key="item.time">
-            <strong>{{ item.time }}</strong>
-            <span>{{ item.activity }}</span>
-          </li>
-        </ul>
-      </main>
-
-      <!-- Ticket Sidebar -->
-      <aside class="sidebar">
-        <AppCard class="ticket-card sticky-pane">
-          <h3>Attendee Registration</h3>
-
-          <p class="price">Free</p>
-
-          <p class="ticket-desc">
-            Secure your seat now before the quota is full.
+          <p class="description-text">
+            {{ event.desc }}
           </p>
 
-          <AppButton
-            variant="primary"
-            class="btn-register"
-            @click="registerEvent"
-          >
-            Register Now
-          </AppButton>
+          <!-- Event Agenda -->
+          <h2 class="agenda-title">
+            Event Agenda
+          </h2>
 
-          <p class="spots">Only 12 seats left!</p>
-        </AppCard>
-      </aside>
+          <ul class="agenda-list">
+            <li
+              v-for="item in agenda"
+              :key="item.time"
+            >
+              <strong>{{ item.time }}</strong>
+              <span>{{ item.activity }}</span>
+            </li>
+          </ul>
+        </main>
+
+        <!-- Ticket Sidebar -->
+        <aside class="sidebar">
+          <AppCard class="ticket-card sticky-pane">
+            <h3>Attendee Registration</h3>
+
+            <p class="price">
+              {{ event.price || 'Free' }}
+            </p>
+
+            <p class="ticket-desc">
+              {{
+                event.done
+                  ? 'Registration is closed as this event has ended.'
+                  : 'Secure your ticket now before the quota is filled.'
+              }}
+            </p>
+
+            <AppButton
+              v-if="!event.done"
+              variant="primary"
+              class="btn-register"
+              @click="registerEvent"
+            >
+              Register Now
+            </AppButton>
+
+            <AppButton
+              v-else
+              variant="secondary"
+              class="btn-register btn-disabled"
+              disabled
+            >
+              Registration Closed
+            </AppButton>
+
+            <p
+              v-if="!event.done"
+              class="spots"
+            >
+              Only {{ event.quota }} seats available!
+            </p>
+          </AppCard>
+        </aside>
+      </div>
+    </template>
+
+    <!-- Event Not Found -->
+    <div
+      v-else
+      class="not-found-card"
+    >
+      <h2>404 - Event Not Found</h2>
+
+      <p>
+        The event you are looking for is unavailable
+        or has been removed by the organizer.
+      </p>
+
+      <AppButton
+        variant="primary"
+        @click="goBack"
+      >
+        Back to Event Catalog
+      </AppButton>
     </div>
   </div>
 </template>
@@ -154,16 +227,40 @@ function registerEvent() {
   max-width: 800px;
 }
 
-/* Event Tag */
+/* Header Tags */
+.header-tags {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
 .event-tag {
-  display: inline-block;
   background: rgba(102, 68, 255, 0.1);
   color: var(--primary);
   padding: var(--space-1) var(--space-4);
   border-radius: 50px;
   font-weight: 600;
   font-size: 0.9rem;
-  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.status-tag {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-live {
+  background: rgba(46, 204, 113, 0.15);
+  color: #27ae60;
+}
+
+.status-ended {
+  background: rgba(108, 117, 125, 0.15);
+  color: #6c757d;
 }
 
 /* Event Title */
@@ -198,7 +295,6 @@ function registerEvent() {
   min-width: 0;
 }
 
-/* Content Heading */
 .main-desc h2 {
   color: var(--text-main);
   margin-bottom: var(--space-4);
@@ -208,10 +304,11 @@ function registerEvent() {
 }
 
 .main-desc p {
-  color: #444;
+  color: var(--text-muted);
   line-height: 1.8;
   margin-bottom: var(--space-6);
   font-size: 1.05rem;
+  white-space: pre-line;
 }
 
 /* Event Agenda */
@@ -274,6 +371,7 @@ function registerEvent() {
 .ticket-desc {
   color: var(--text-muted);
   margin-bottom: var(--space-6);
+  line-height: 1.6;
 }
 
 /* Register Button */
@@ -281,11 +379,35 @@ function registerEvent() {
   width: 100%;
 }
 
+.btn-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .spots {
   margin-top: var(--space-4);
-  color: #e63946;
+  color: #27ae60;
   font-weight: 600;
   font-size: 0.95rem;
+}
+
+/* Not Found */
+.not-found-card {
+  text-align: center;
+  padding: var(--space-12);
+  background: white;
+  border-radius: var(--space-4);
+  border: 1px solid var(--border-color);
+}
+
+.not-found-card h2 {
+  margin-bottom: var(--space-2);
+  color: var(--text-main);
+}
+
+.not-found-card p {
+  color: var(--text-muted);
+  margin-bottom: var(--space-6);
 }
 
 /* Animation */
