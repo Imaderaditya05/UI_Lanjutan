@@ -1,11 +1,12 @@
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEvents } from '@/composables/useEvents'
 import AppModal from '@/components/ui/AppModal.vue'
-import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import OrganizerEventCard from '@/components/event/OrganizerEventCard.vue'
+import EventCreateForm from '@/components/event/EventCreateForm.vue'
 
 const router = useRouter()
 
@@ -17,24 +18,14 @@ const {
   deleteEvent,
 } = useEvents()
 
-// KONDISI TAB AKTIF
+// Tab: active, create, completed
 const currentTab = ref('active')
 
-// STATE FORMULIR CREATE EVENT
-const form = reactive({
-  title: '',
-  cat: 'Workshop',
-  date: '',
-  loc: '',
-  quota: 100,
-  price: 'Free',
-  desc: '',
-})
-
+// Notification state
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// MODAL STATE FOR ACTIONS (Complete & Delete)
+// Confirmation modal state
 const isModalOpen = ref(false)
 const modalAction = ref('complete')
 const selectedEvent = ref(null)
@@ -52,16 +43,16 @@ const handleOpenDeleteModal = (event) => {
 }
 
 const handleConfirmModal = () => {
-  if (selectedEvent.value) {
-    if (modalAction.value === 'complete') {
-      completeEvent(selectedEvent.value.id)
-    } else if (modalAction.value === 'delete') {
-      deleteEvent(selectedEvent.value.id)
-    }
+  if (!selectedEvent.value) return
 
-    isModalOpen.value = false
-    selectedEvent.value = null
+  if (modalAction.value === 'complete') {
+    completeEvent(selectedEvent.value.id)
+  } else if (modalAction.value === 'delete') {
+    deleteEvent(selectedEvent.value.id)
   }
+
+  isModalOpen.value = false
+  selectedEvent.value = null
 }
 
 const handleCancelModal = () => {
@@ -69,76 +60,34 @@ const handleCancelModal = () => {
   selectedEvent.value = null
 }
 
-// Format helper to convert YYYY-MM-DDTHH:mm into a readable date
-const formatEventDate = (dt) => {
-  if (!dt) return ''
+const handleCreateEvent = (eventData) => {
+  errorMessage.value = ''
+  successMessage.value = ''
 
-  const dateObj = new Date(dt)
-  if (isNaN(dateObj.getTime())) return dt
+  try {
+    createEvent(eventData)
+    successMessage.value =
+      'Event published successfully and is now live!'
+    currentTab.value = 'active'
 
-  const datePart = dateObj.toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  })
-
-  const timePart = dateObj.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  })
-
-  return `${datePart} • ${timePart}`
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    errorMessage.value =
+      'Unable to publish the event. Please try again.'
+    console.error('Failed to create event:', error)
+  }
 }
 
-// HANDLER SUBMIT FORM CREATE EVENT
-const handleSubmitEvent = () => {
-  // Validate Empty Input
-  if (
-    !form.title.trim() ||
-    !form.date ||
-    !form.loc.trim() ||
-    !form.desc.trim()
-  ) {
-    errorMessage.value =
-      'Please fill in all required fields before publishing the event!'
-    successMessage.value = ''
-    return
-  }
-
-  createEvent({
-    title: form.title,
-    cat: form.cat,
-    date: formatEventDate(form.date),
-    loc: form.loc,
-    quota: form.quota,
-    price: form.price,
-    desc: form.desc,
-  })
-
-  // Reset Form
-  form.title = ''
-  form.date = ''
-  form.loc = ''
-  form.quota = 100
-  form.price = 'Free'
-  form.cat = 'Workshop'
-  form.desc = ''
-
-  errorMessage.value = ''
-  successMessage.value =
-    'Event published successfully and is now live!'
-
-  // Switch tab back to active list
-  setTimeout(() => {
-    successMessage.value = ''
-    currentTab.value = 'active'
-  }, 1000)
+const handleCancelCreate = () => {
+  currentTab.value = 'active'
 }
 </script>
 
 <template>
   <div class="event-management-page">
+    <!-- PAGE HEADER -->
     <div class="page-header">
       <div>
         <h2>Event Management Control</h2>
@@ -155,7 +104,7 @@ const handleSubmitEvent = () => {
       </AppButton>
     </div>
 
-    <!-- TAB NAVIGATION SYSTEM -->
+    <!-- TAB NAVIGATION -->
     <div class="tabs-container">
       <button
         :class="['tab-btn', { active: currentTab === 'active' }]"
@@ -179,7 +128,24 @@ const handleSubmitEvent = () => {
       </button>
     </div>
 
-    <!-- TAB 1: ACTIVE EVENTS LIST -->
+    <!-- NOTIFICATIONS -->
+    <div
+      v-if="errorMessage"
+      class="alert-box alert-error"
+      role="alert"
+    >
+      ⚠️ {{ errorMessage }}
+    </div>
+
+    <div
+      v-if="successMessage"
+      class="alert-box alert-success"
+      role="status"
+    >
+      🎉 {{ successMessage }}
+    </div>
+
+    <!-- TAB 1: ACTIVE EVENTS -->
     <section
       v-if="currentTab === 'active'"
       class="tab-pane"
@@ -188,50 +154,16 @@ const handleSubmitEvent = () => {
         v-if="activeEvents.length > 0"
         class="events-grid"
       >
-        <AppCard
+        <OrganizerEventCard
           v-for="item in activeEvents"
           :key="item.id"
-          class="organizer-event-card"
-        >
-          <div class="card-header">
-            <span class="category-badge">{{ item.cat }}</span>
-            <span class="status-badge status-active">Active</span>
-          </div>
-
-          <h3 class="event-title">{{ item.title }}</h3>
-
-          <p class="event-meta">
-            🗓️ {{ item.date }} &bull; {{ item.loc }}
-          </p>
-
-          <p class="event-desc">{{ item.desc }}</p>
-
-          <div class="card-actions">
-            <button
-              class="btn-action btn-detail"
-              @click="router.push(`/browse/events/${item.id}`)"
-            >
-              ◉ View Details
-            </button>
-
-            <button
-              class="btn-action btn-complete"
-              @click="handleOpenCompleteModal(item)"
-            >
-              ✅ Complete Event
-            </button>
-
-            <button
-              class="btn-action btn-delete"
-              @click="handleOpenDeleteModal(item)"
-            >
-              ▤ Delete
-            </button>
-          </div>
-        </AppCard>
+          :event="item"
+          @view-detail="(id) => router.push(`/browse/events/${id}`)"
+          @complete="handleOpenCompleteModal"
+          @delete="handleOpenDeleteModal"
+        />
       </div>
 
-      <!-- EMPTY STATE ACTIVE -->
       <div
         v-else
         class="empty-state"
@@ -252,139 +184,18 @@ const handleSubmitEvent = () => {
       </div>
     </section>
 
-    <!-- TAB 2: CREATE EVENT FORM -->
+    <!-- TAB 2: CREATE EVENT -->
     <section
       v-if="currentTab === 'create'"
       class="tab-pane"
     >
-      <AppCard class="form-card">
-        <h3>Create New Event Form</h3>
-
-        <p class="form-subtitle">
-          Information entered here will be instantly published to the Gatherly public catalog.
-        </p>
-
-        <div
-          v-if="errorMessage"
-          class="alert-box alert-error"
-        >
-          ⚠️ {{ errorMessage }}
-        </div>
-
-        <div
-          v-if="successMessage"
-          class="alert-box alert-success"
-        >
-          🎉 {{ successMessage }}
-        </div>
-
-        <form
-          class="event-form"
-          @submit.prevent="handleSubmitEvent"
-        >
-          <div class="form-group">
-            <label>Event Title *</label>
-            <input
-              v-model="form.title"
-              type="text"
-              placeholder="e.g. Modern UI/UX Masterclass"
-              class="form-input"
-              required
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Event Category *</label>
-              <select
-                v-model="form.cat"
-                class="form-input"
-              >
-                <option value="Workshop">Workshop</option>
-                <option value="Meetup">Meetup</option>
-                <option value="Competition">Competition</option>
-                <option value="Seminar">Seminar</option>
-                <option value="Conference">Conference</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Date &amp; Time *</label>
-              <input
-                v-model="form.date"
-                type="datetime-local"
-                class="form-input"
-                required
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Event Location *</label>
-              <input
-                v-model="form.loc"
-                type="text"
-                placeholder="e.g. Innovation Center, Jakarta"
-                class="form-input"
-                required
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Attendee Quota</label>
-              <input
-                v-model.number="form.quota"
-                type="number"
-                min="10"
-                placeholder="100"
-                class="form-input"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Ticket Price</label>
-            <input
-              v-model="form.price"
-              type="text"
-              placeholder="Free or ticket price"
-              class="form-input"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Event Description *</label>
-            <textarea
-              v-model="form.desc"
-              rows="4"
-              placeholder="Describe the agenda, speakers, and key takeaways..."
-              class="form-input"
-              required
-            ></textarea>
-          </div>
-
-          <div class="form-actions">
-            <button
-              type="button"
-              class="btn-secondary-action"
-              @click="currentTab = 'active'"
-            >
-              Cancel
-            </button>
-
-            <AppButton
-              variant="primary"
-              type="submit"
-            >
-              🚀 Publish Event Now
-            </AppButton>
-          </div>
-        </form>
-      </AppCard>
+      <EventCreateForm
+        @submit="handleCreateEvent"
+        @cancel="handleCancelCreate"
+      />
     </section>
 
-    <!-- TAB 3: COMPLETED EVENTS (ARCHIVE) -->
+    <!-- TAB 3: COMPLETED EVENTS -->
     <section
       v-if="currentTab === 'completed'"
       class="tab-pane"
@@ -393,42 +204,16 @@ const handleSubmitEvent = () => {
         v-if="completedEvents.length > 0"
         class="events-grid"
       >
-        <AppCard
+        <OrganizerEventCard
           v-for="item in completedEvents"
           :key="item.id"
-          class="organizer-event-card card-completed"
-        >
-          <div class="card-header">
-            <span class="category-badge">{{ item.cat }}</span>
-            <span class="status-badge status-completed">Completed</span>
-          </div>
-
-          <h3 class="event-title text-strike">
-            {{ item.title }}
-          </h3>
-
-          <p class="event-meta">
-            🗓️ {{ item.date }} &bull; {{ item.loc }}
-          </p>
-
-          <p class="event-desc">{{ item.desc }}</p>
-
-          <div class="completed-notice">
-            This event has ended and is archived from the public catalog.
-          </div>
-
-          <div class="card-actions">
-            <button
-              class="btn-action btn-delete"
-              @click="handleOpenDeleteModal(item)"
-            >
-              ▤ Delete from Archive
-            </button>
-          </div>
-        </AppCard>
+          :event="item"
+          :is-completed="true"
+          @view-detail="(id) => router.push(`/browse/events/${id}`)"
+          @delete="handleOpenDeleteModal"
+        />
       </div>
 
-      <!-- EMPTY STATE COMPLETED -->
       <div
         v-else
         class="empty-state"
@@ -441,17 +226,29 @@ const handleSubmitEvent = () => {
       </div>
     </section>
 
-    <!-- MODAL KONFIRMASI -->
+    <!-- CONFIRMATION MODAL -->
     <AppModal
       :is-open="isModalOpen"
-      :title="modalAction === 'complete' ? 'Complete Event?' : 'Delete Event Permanently?'"
+      :title="
+        modalAction === 'complete'
+          ? 'Complete Event?'
+          : 'Delete Event Permanently?'
+      "
       :message="
         modalAction === 'complete'
           ? `Are you sure you want to mark '${selectedEvent?.title}' as completed? Once completed, the status is final and the event will be automatically removed from public listings.`
           : `Are you sure you want to permanently delete '${selectedEvent?.title}'? This action cannot be undone and will permanently remove this event from all records.`
       "
-      :confirm-text="modalAction === 'complete' ? 'Yes, Complete' : 'Yes, Delete Permanently'"
+      :confirm-text="
+        modalAction === 'complete'
+          ? 'Yes, Complete'
+          : 'Yes, Delete Permanently'
+      "
       cancel-text="Cancel"
+      :variant="modalAction === 'complete' ? 'success' : 'danger'"
+      :badge-text="
+        modalAction === 'complete' ? 'CONFIRMATION' : 'WARNING'
+      "
       @confirm="handleConfirmModal"
       @close="handleCancelModal"
     />
@@ -464,6 +261,7 @@ const handleSubmitEvent = () => {
   margin: 0 auto;
 }
 
+/* PAGE HEADER */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -515,140 +313,12 @@ const handleSubmitEvent = () => {
   color: white;
 }
 
-/* ORGANIZER EVENT CARDS GRID */
+/* EVENT GRID */
 .events-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-6);
   margin-bottom: var(--space-12);
-}
-
-.organizer-event-card {
-  padding: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-3);
-}
-
-.category-badge {
-  background: rgba(102, 68, 255, 0.1);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: 50px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 50px;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.status-active {
-  background: rgba(46, 204, 113, 0.15);
-  color: #27ae60;
-}
-
-.status-completed {
-  background: rgba(108, 117, 125, 0.15);
-  color: #6c757d;
-}
-
-.event-title {
-  font-size: 1.3rem;
-  margin-bottom: var(--space-2);
-  color: var(--text-main);
-}
-
-.text-strike {
-  text-decoration: line-through;
-  color: #8a8d93;
-}
-
-.card-completed {
-  opacity: 0.85;
-  background-color: #fafbfc;
-}
-
-.event-meta {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-bottom: var(--space-3);
-}
-
-.event-desc {
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: var(--space-6);
-  flex-grow: 1;
-}
-
-.completed-notice {
-  background: #f1f3f5;
-  color: #495057;
-  padding: var(--space-3);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  margin-bottom: var(--space-4);
-}
-
-.card-actions {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-color);
-}
-
-.btn-action {
-  flex: 1;
-  padding: var(--space-2) var(--space-3);
-  border-radius: 6px;
-  border: 1px solid var(--border-color);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  background: white;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.btn-detail:hover {
-  background: var(--bg-light);
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.btn-complete {
-  color: #27ae60;
-  border-color: rgba(39, 174, 96, 0.3);
-}
-
-.btn-complete:hover {
-  background: #27ae60;
-  color: white;
-}
-
-.btn-delete {
-  color: #e63946;
-  border-color: rgba(230, 57, 70, 0.3);
-  flex: 0 0 auto;
-}
-
-.btn-delete:hover {
-  background: #e63946;
-  color: white;
 }
 
 /* EMPTY STATE */
@@ -675,23 +345,7 @@ const handleSubmitEvent = () => {
   margin-bottom: var(--space-6);
 }
 
-/* FORM CREATE EVENT */
-.form-card {
-  padding: var(--space-8);
-  max-width: 800px;
-  margin: 0 auto var(--space-12);
-}
-
-.form-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: var(--space-1);
-}
-
-.form-subtitle {
-  color: var(--text-muted);
-  margin-bottom: var(--space-6);
-}
-
+/* ALERTS */
 .alert-box {
   padding: var(--space-3) var(--space-4);
   border-radius: 8px;
@@ -712,72 +366,8 @@ const handleSubmitEvent = () => {
   border: 1px solid #b2f2bb;
 }
 
-.event-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.form-group label {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.form-input {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.2s;
-  background: white;
-  color: var(--text-main);
-}
-
-.form-input:focus {
-  border-color: var(--primary);
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
-}
-
-.btn-secondary-action {
-  background: var(--bg-light);
-  border: 1px solid var(--border-color);
-  padding: var(--space-3) var(--space-6);
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--text-muted);
-}
-
-.btn-secondary-action:hover {
-  background: #e9ecef;
-  color: var(--text-main);
-}
-
+/* RESPONSIVE */
 @media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
   .page-header {
     flex-direction: column;
     align-items: flex-start;
@@ -793,10 +383,6 @@ const handleSubmitEvent = () => {
 
   .events-grid {
     grid-template-columns: 1fr;
-  }
-
-  .form-card {
-    padding: var(--space-4);
   }
 }
 </style>

@@ -9,10 +9,17 @@ import AppCard from '@/components/ui/AppCard.vue'
 const route = useRoute()
 const router = useRouter()
 
-const { getEventById } = useEvents()
+const { getEventById, isUserRegistered } = useEvents()
 
 // Mengambil data event berdasarkan ID di URL
 const event = computed(() => getEventById(route.params.id))
+
+// Memeriksa apakah user sudah terdaftar
+const isRegistered = computed(() => {
+  return event.value
+    ? isUserRegistered(event.value.id)
+    : false
+})
 
 const agenda = [
   {
@@ -42,22 +49,20 @@ function goBack() {
 }
 
 function registerEvent() {
-  if (!event.value || event.value.done) return
+  if (!event.value || event.value.done || isRegistered.value) return
 
-  alert('Registration feature will be available soon!')
+  router.push(`/browse/events/${event.value.id}/register`)
 }
 </script>
 
 <template>
   <div class="event-detail-page">
-    <!-- Back Button -->
     <button class="btn-back" @click="goBack">
       &larr; Back to Events
     </button>
 
-    <!-- Event Found -->
+    <!-- EVENT FOUND -->
     <template v-if="event">
-      <!-- Event Header -->
       <section class="detail-header">
         <div class="header-content">
           <div class="header-tags">
@@ -73,6 +78,20 @@ function registerEvent() {
             </span>
 
             <span
+              v-else-if="isRegistered"
+              class="status-tag status-registered"
+            >
+              Registered
+            </span>
+
+            <span
+              v-else-if="event.quota <= 0"
+              class="status-tag status-soldout"
+            >
+              Sold Out
+            </span>
+
+            <span
               v-else
               class="status-tag status-live"
             >
@@ -84,23 +103,23 @@ function registerEvent() {
 
           <div class="meta-info">
             <span class="meta-item">
-              📅 {{ event.date }}
+              <strong>Date:</strong> {{ event.date }}
             </span>
 
             <span class="meta-item">
-              📍 {{ event.loc }}
+              <strong>Location:</strong> {{ event.loc }}
             </span>
 
             <span class="meta-item">
-              🎟️ Quota: {{ event.quota }} Attendees
+              <strong>Remaining Quota:</strong>
+              {{ event.quota }} Attendees
             </span>
           </div>
         </div>
       </section>
 
-      <!-- Asymmetrical Layout -->
+      <!-- EVENT CONTENT -->
       <div class="detail-content grid-asymmetric">
-        <!-- Main Description -->
         <main class="main-desc">
           <h2>About This Event</h2>
 
@@ -108,10 +127,7 @@ function registerEvent() {
             {{ event.desc }}
           </p>
 
-          <!-- Event Agenda -->
-          <h2 class="agenda-title">
-            Event Agenda
-          </h2>
+          <h2 class="agenda-title">Event Agenda</h2>
 
           <ul class="agenda-list">
             <li
@@ -124,57 +140,91 @@ function registerEvent() {
           </ul>
         </main>
 
-        <!-- Ticket Sidebar -->
+        <!-- REGISTRATION SIDEBAR -->
         <aside class="sidebar">
           <AppCard class="ticket-card sticky-pane">
-            <h3>Attendee Registration</h3>
-
-            <p class="price">
-              {{ event.price || 'Free' }}
-            </p>
+            <h3>Event Registration</h3>
 
             <p class="ticket-desc">
-              {{
-                event.done
-                  ? 'Registration is closed as this event has ended.'
-                  : 'Secure your ticket now before the quota is filled.'
-              }}
+              <template v-if="event.done">
+                Registration is closed as this event has concluded.
+              </template>
+
+              <template v-else-if="isRegistered">
+                You are registered for this event. Your booking is confirmed.
+              </template>
+
+              <template v-else-if="event.quota <= 0">
+                All seats for this event are currently full.
+              </template>
+
+              <template v-else>
+                Secure your spot now before the remaining quota is filled.
+              </template>
             </p>
 
-            <AppButton
-              v-if="!event.done"
-              variant="primary"
-              class="btn-register"
-              @click="registerEvent"
-            >
-              Register Now
-            </AppButton>
+            <div class="action-buttons">
+              <AppButton
+                v-if="event.done"
+                variant="secondary"
+                class="btn-register btn-disabled"
+                disabled
+              >
+                Registration Closed
+              </AppButton>
 
-            <AppButton
-              v-else
-              variant="secondary"
-              class="btn-register btn-disabled"
-              disabled
-            >
-              Registration Closed
-            </AppButton>
+              <div
+                v-else-if="isRegistered"
+                class="registered-action-group"
+              >
+                <AppButton
+                  variant="secondary"
+                  class="btn-register btn-registered"
+                  disabled
+                >
+                  Already Registered
+                </AppButton>
+
+                <router-link
+                  :to="`/browse/your-events/${event.id}`"
+                  class="view-receipt-link"
+                >
+                  View Your Ticket Receipt &rarr;
+                </router-link>
+              </div>
+
+              <AppButton
+                v-else-if="event.quota <= 0"
+                variant="secondary"
+                class="btn-register btn-disabled"
+                disabled
+              >
+                Sold Out
+              </AppButton>
+
+              <AppButton
+                v-else
+                variant="primary"
+                class="btn-register"
+                @click="registerEvent"
+              >
+                Register Now
+              </AppButton>
+            </div>
 
             <p
-              v-if="!event.done"
+              v-if="!event.done && !isRegistered && event.quota > 0"
               class="spots"
             >
-              Only {{ event.quota }} seats available!
+              {{ event.quota }} seats available
             </p>
           </AppCard>
         </aside>
       </div>
     </template>
 
-    <!-- Event Not Found -->
-    <div
-      v-else
-      class="not-found-card"
-    >
+    <!-- EVENT NOT FOUND -->
+    <div v-else class="not-found-card">
       <h2>404 - Event Not Found</h2>
 
       <p>
@@ -197,7 +247,7 @@ function registerEvent() {
   animation: fadeIn 0.5s ease;
 }
 
-/* Back Button */
+/* BACK BUTTON */
 .btn-back {
   background: none;
   border: none;
@@ -214,7 +264,7 @@ function registerEvent() {
   color: var(--primary);
 }
 
-/* Event Header */
+/* EVENT HEADER */
 .detail-header {
   background: var(--bg-light);
   border-radius: var(--space-4);
@@ -227,7 +277,7 @@ function registerEvent() {
   max-width: 800px;
 }
 
-/* Header Tags */
+/* HEADER TAGS */
 .header-tags {
   display: flex;
   gap: var(--space-3);
@@ -258,12 +308,22 @@ function registerEvent() {
   color: #27ae60;
 }
 
+.status-registered {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-soldout {
+  background: #ffe2e2;
+  color: #b91c1c;
+}
+
 .status-ended {
   background: rgba(108, 117, 125, 0.15);
   color: #6c757d;
 }
 
-/* Event Title */
+/* EVENT TITLE */
 .detail-header h1 {
   color: var(--text-main);
   font-size: 2.8rem;
@@ -271,7 +331,7 @@ function registerEvent() {
   line-height: 1.2;
 }
 
-/* Meta Information */
+/* EVENT META */
 .meta-info {
   display: flex;
   flex-wrap: wrap;
@@ -284,7 +344,11 @@ function registerEvent() {
   font-size: 1.05rem;
 }
 
-/* Asymmetrical Layout */
+.meta-item strong {
+  color: var(--text-main);
+}
+
+/* ASYMMETRICAL LAYOUT */
 .grid-asymmetric {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -303,7 +367,7 @@ function registerEvent() {
   padding-left: var(--space-2);
 }
 
-.main-desc p {
+.description-text {
   color: var(--text-muted);
   line-height: 1.8;
   margin-bottom: var(--space-6);
@@ -311,7 +375,7 @@ function registerEvent() {
   white-space: pre-line;
 }
 
-/* Event Agenda */
+/* EVENT AGENDA */
 .agenda-title {
   margin-top: var(--space-12);
 }
@@ -338,50 +402,78 @@ function registerEvent() {
   color: var(--text-main);
 }
 
-/* Sidebar */
+/* SIDEBAR */
 .sidebar {
   min-width: 0;
 }
 
-/* Sticky Pane */
+/* STICKY PANEL */
 .sticky-pane {
   position: sticky;
   top: 100px;
 }
 
-/* Ticket Card */
+/* REGISTRATION CARD */
 .ticket-card {
   padding: var(--space-8);
   text-align: center;
 }
 
 .ticket-card h3 {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: var(--text-main);
-  margin-bottom: var(--space-2);
-}
-
-.price {
-  font-size: 2.8rem;
-  font-weight: 800;
-  color: var(--primary);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .ticket-desc {
   color: var(--text-muted);
   margin-bottom: var(--space-6);
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 0.95rem;
 }
 
-/* Register Button */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
 .btn-register {
   width: 100%;
 }
 
 .btn-disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
+}
+
+.btn-registered {
+  cursor: default;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid var(--border-color);
+  opacity: 1;
+}
+
+.registered-action-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.view-receipt-link {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  display: inline-block;
+  transition: color 0.2s;
+}
+
+.view-receipt-link:hover {
+  text-decoration: underline;
 }
 
 .spots {
@@ -391,7 +483,7 @@ function registerEvent() {
   font-size: 0.95rem;
 }
 
-/* Not Found */
+/* NOT FOUND */
 .not-found-card {
   text-align: center;
   padding: var(--space-12);
@@ -410,7 +502,7 @@ function registerEvent() {
   margin-bottom: var(--space-6);
 }
 
-/* Animation */
+/* ANIMATION */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -423,7 +515,7 @@ function registerEvent() {
   }
 }
 
-/* Responsive */
+/* RESPONSIVE */
 @media (max-width: 900px) {
   .grid-asymmetric {
     grid-template-columns: 1fr;

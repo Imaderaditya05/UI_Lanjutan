@@ -1,3 +1,4 @@
+
 /* src/assets/main.css */
 
 *,
@@ -7,7 +8,6 @@
 }
 
 :root {
-
   /* SPATIAL SYSTEM (BASE-8)
      Digunakan untuk konsistensi jarak, margin, dan padding */
 
@@ -19,7 +19,6 @@
   --space-8: 32px;
   --space-12: 48px;
   --space-16: 64px;
-
 
   /* COLOR SYSTEM & CONTRAST */
 
@@ -35,9 +34,7 @@
   --border-color: #e4e4e7;
 }
 
-
 body {
-
   margin: 0;
 
   font-family:
@@ -50,12 +47,10 @@ body {
     sans-serif;
 
   color: var(--text-main);
-
   background-color: #ffffff;
 
   overflow-x: hidden;
 }
-
 
 /* =========================================
    GLOBAL GRID SYSTEM
@@ -67,11 +62,9 @@ body {
 */
 
 .grid-12 {
-
   display: grid;
 
-  grid-template-columns:
-    repeat(12, 1fr);
+  grid-template-columns: repeat(12, 1fr);
 
   gap: var(--space-6);
 }

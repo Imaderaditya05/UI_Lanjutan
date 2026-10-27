@@ -11,8 +11,8 @@ import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
 
-// Mengambil data event dari shared composable
-const { activeEvents } = useEvents()
+// Mengambil event aktif dan fungsi pengecekan registrasi
+const { activeEvents, isUserRegistered } = useEvents()
 
 // Search dan category filter
 const searchQuery = ref('')
@@ -27,7 +27,7 @@ const categories = [
   'Conference',
 ]
 
-// Filter event secara reaktif
+// Filter event aktif secara reaktif
 const filteredEvents = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
@@ -59,7 +59,7 @@ function handleViewDetail(id) {
 
 <template>
   <div class="event-list-page">
-    <!-- Header -->
+    <!-- HEADER -->
     <div class="header-section">
       <h2 class="section-title">
         Upcoming Events
@@ -70,7 +70,7 @@ function handleViewDetail(id) {
       </p>
     </div>
 
-    <!-- Search and Category Filter -->
+    <!-- SEARCH DAN FILTER KATEGORI -->
     <div class="filters-section">
       <SearchBar v-model="searchQuery" />
 
@@ -80,7 +80,7 @@ function handleViewDetail(id) {
       />
     </div>
 
-    <!-- Active Event Grid -->
+    <!-- GRID EVENT AKTIF -->
     <div
       v-if="filteredEvents.length > 0"
       class="event-grid"
@@ -89,36 +89,39 @@ function handleViewDetail(id) {
         v-for="event in filteredEvents"
         :key="event.id"
         :event="event"
+        :is-registered="isUserRegistered(event.id)"
         @view-detail="handleViewDetail"
       />
     </div>
 
-    <!-- Empty State -->
+    <!-- EMPTY STATE -->
     <div
       v-else
       class="empty-state"
     >
-      <div class="empty-icon">📊</div>
+      <div class="empty-badge">
+        CATALOG EMPTY
+      </div>
 
       <h3>No Events Available Yet</h3>
 
       <p>
         {{
-          searchQuery || selectedCategory !== 'All'
+          searchQuery.trim() || selectedCategory !== 'All'
             ? 'No events match your search or selected category. Try changing your filters.'
-            : 'There are currently no active events scheduled. Are you an organizer? Publish and manage your first event through the Dashboard!'
+            : 'There are currently no active events scheduled. Are you an organizer? Publish and manage your first event today through the Dashboard!'
         }}
       </p>
 
       <div
-        v-if="!searchQuery && selectedCategory === 'All'"
+        v-if="!searchQuery.trim() && selectedCategory === 'All'"
         class="empty-action"
       >
         <AppButton
           variant="primary"
           @click="router.push('/dashboard')"
         >
-          Go to Organizer Dashboard →
+          Go to Organizer Dashboard &rarr;
         </AppButton>
       </div>
     </div>
@@ -131,67 +134,73 @@ function handleViewDetail(id) {
   animation: fadeIn 0.4s ease;
 }
 
-/* Header */
+/* HEADER */
 .header-section {
   margin-bottom: var(--space-8);
 }
 
 .section-title {
-  margin: 0 0 var(--space-2);
-  color: var(--text-main);
   font-size: 2.2rem;
+  margin-bottom: var(--space-2);
+  color: var(--text-main);
 }
 
 .section-desc {
-  margin: 0;
   color: var(--text-muted);
   font-size: 1.1rem;
-  line-height: 1.6;
+  margin: 0;
 }
 
-/* Filters */
+/* SEARCH DAN FILTER */
 .filters-section {
+  margin-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  margin-bottom: var(--space-6);
 }
 
-/* Adaptive Event Grid */
+/* ADAPTIVE EVENT GRID */
 .event-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-6);
-  width: 100%;
 }
 
-/* Empty State */
+/* FRIENDLY EMPTY STATE */
 .empty-state {
   text-align: center;
   padding: var(--space-12) var(--space-8);
   color: var(--text-muted);
   background: white;
-  border-radius: var(--space-4);
   border: 1px dashed var(--border-color);
+  border-radius: var(--space-4);
   max-width: 600px;
   margin: var(--space-8) auto;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
 }
 
-.empty-icon {
-  font-size: 3.5rem;
-  margin-bottom: var(--space-3);
+.empty-badge {
+  display: inline-block;
+  background: var(--bg-light);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  border-radius: 50px;
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-4);
 }
 
 .empty-state h3 {
   font-size: 1.5rem;
   color: var(--text-main);
-  margin: 0 0 var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
 .empty-state p {
   line-height: 1.6;
-  margin: 0 0 var(--space-6);
+  margin-bottom: var(--space-6);
   font-size: 1rem;
 }
 
@@ -200,7 +209,7 @@ function handleViewDetail(id) {
   justify-content: center;
 }
 
-/* Animation */
+/* ANIMATION */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -213,7 +222,7 @@ function handleViewDetail(id) {
   }
 }
 
-/* Responsive */
+/* RESPONSIVE */
 @media (max-width: 700px) {
   .section-title {
     font-size: 1.7rem;
