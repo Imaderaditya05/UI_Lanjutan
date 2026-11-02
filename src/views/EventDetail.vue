@@ -1,6 +1,6 @@
-
+```vue
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEvents } from '@/composables/useEvents'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -9,161 +9,159 @@ import AppCard from '@/components/ui/AppCard.vue'
 const route = useRoute()
 const router = useRouter()
 
-const { getEventById, isUserRegistered } = useEvents()
+const {
+  getEventById,
+  isUserRegistered,
+  fetchEventById,
+  loading,
+  error,
+} = useEvents()
 
 // Mengambil data event berdasarkan ID di URL
 const event = computed(() => getEventById(route.params.id))
 
-// Memeriksa apakah user sudah terdaftar
+// Mengecek apakah pengguna sudah terdaftar
 const isRegistered = computed(() => {
-  return event.value
-    ? isUserRegistered(event.value.id)
-    : false
+  return event.value ? isUserRegistered(event.value.id) : false
 })
 
-const agenda = [
-  {
-    time: '09:00 AM',
-    activity: 'Registration & QR Check-in Scanning',
-  },
-  {
-    time: '10:00 AM',
-    activity: 'Session 1: Vue Router & Navigation Fundamentals',
-  },
-  {
-    time: '11:30 AM',
-    activity: 'Coffee Break & Networking Session',
-  },
-  {
-    time: '01:00 PM',
-    activity: 'Session 2: Layout System & Grid Implementation',
-  },
-  {
-    time: '03:00 PM',
-    activity: 'Q&A & Closing Remarks',
-  },
-]
-
-function goBack() {
-  router.push('/browse/events')
-}
-
-function registerEvent() {
-  if (!event.value || event.value.done || isRegistered.value) return
-
-  router.push(`/browse/events/${event.value.id}/register`)
-}
+// Mengambil data dari API jika pengguna langsung membuka URL detail
+onMounted(async () => {
+  if (!event.value) {
+    await fetchEventById(route.params.id)
+  }
+})
 </script>
 
 <template>
   <div class="event-detail-page">
-    <button class="btn-back" @click="goBack">
+    <!-- BACK BUTTON -->
+    <button
+      type="button"
+      @click="router.push('/browse/events')"
+      class="btn-back"
+    >
       &larr; Back to Events
     </button>
 
-    <!-- EVENT FOUND -->
-    <template v-if="event">
+    <!-- KONDISI 1: LOADING -->
+    <div
+      v-if="loading && !event"
+      class="loading-state"
+    >
+      <p>
+        ⏳ Memuat rincian acara dari server...
+      </p>
+    </div>
+
+    <!-- KONDISI 2: EVENT DITEMUKAN -->
+    <div v-else-if="event">
+
+      <!-- DETAIL HEADER -->
       <section class="detail-header">
-        <div class="header-content">
-          <div class="header-tags">
-            <span class="event-tag">
-              {{ event.cat }}
-            </span>
+        <div class="header-tags">
+          <span class="event-tag">
+            {{ event.cat }}
+          </span>
 
-            <span
-              v-if="event.done"
-              class="status-tag status-ended"
-            >
-              Event Finished
-            </span>
+          <span
+            v-if="event.done"
+            class="status-tag status-ended"
+          >
+            Event Finished
+          </span>
 
-            <span
-              v-else-if="isRegistered"
-              class="status-tag status-registered"
-            >
-              Registered
-            </span>
+          <span
+            v-else-if="isRegistered"
+            class="status-tag status-registered"
+          >
+            Registered
+          </span>
 
-            <span
-              v-else-if="event.quota <= 0"
-              class="status-tag status-soldout"
-            >
-              Sold Out
-            </span>
+          <span
+            v-else-if="event.quota <= 0"
+            class="status-tag status-soldout"
+          >
+            Sold Out
+          </span>
 
-            <span
-              v-else
-              class="status-tag status-live"
-            >
-              Open Registration
-            </span>
-          </div>
+          <span
+            v-else
+            class="status-tag status-live"
+          >
+            Open Registration
+          </span>
+        </div>
 
-          <h1>{{ event.title }}</h1>
+        <h1>{{ event.title }}</h1>
 
-          <div class="meta-info">
-            <span class="meta-item">
-              <strong>Date:</strong> {{ event.date }}
-            </span>
+        <div class="meta-info">
+          <span class="meta-item">
+            <strong>Date:</strong> {{ event.date }}
+          </span>
 
-            <span class="meta-item">
-              <strong>Location:</strong> {{ event.loc }}
-            </span>
+          <span class="meta-item">
+            <strong>Location:</strong> {{ event.loc }}
+          </span>
 
-            <span class="meta-item">
-              <strong>Remaining Quota:</strong>
-              {{ event.quota }} Attendees
-            </span>
-          </div>
+          <span class="meta-item">
+            <strong>Remaining Quota:</strong>
+            {{ event.quota }} Attendees
+          </span>
         </div>
       </section>
 
-      <!-- EVENT CONTENT -->
+      <!-- ASYMMETRICAL LAYOUT -->
       <div class="detail-content grid-asymmetric">
+
+        <!-- MAIN DESCRIPTION -->
         <main class="main-desc">
           <h2>About This Event</h2>
 
           <p class="description-text">
             {{ event.desc }}
           </p>
-
-          <h2 class="agenda-title">Event Agenda</h2>
-
-          <ul class="agenda-list">
-            <li
-              v-for="item in agenda"
-              :key="item.time"
-            >
-              <strong>{{ item.time }}</strong>
-              <span>{{ item.activity }}</span>
-            </li>
-          </ul>
         </main>
 
         <!-- REGISTRATION SIDEBAR -->
         <aside class="sidebar">
           <AppCard class="ticket-card sticky-pane">
+
             <h3>Event Registration</h3>
 
-            <p class="ticket-desc">
-              <template v-if="event.done">
-                Registration is closed as this event has concluded.
-              </template>
-
-              <template v-else-if="isRegistered">
-                You are registered for this event. Your booking is confirmed.
-              </template>
-
-              <template v-else-if="event.quota <= 0">
-                All seats for this event are currently full.
-              </template>
-
-              <template v-else>
-                Secure your spot now before the remaining quota is filled.
-              </template>
+            <!-- STATUS DESCRIPTION -->
+            <p
+              v-if="event.done"
+              class="ticket-desc"
+            >
+              Registration is closed as this event has concluded.
             </p>
 
+            <p
+              v-else-if="isRegistered"
+              class="ticket-desc text-success"
+            >
+              You are registered for this event. Your booking is confirmed.
+            </p>
+
+            <p
+              v-else-if="event.quota <= 0"
+              class="ticket-desc text-warning"
+            >
+              All seats for this event are currently full.
+            </p>
+
+            <p
+              v-else
+              class="ticket-desc"
+            >
+              Secure your spot now before the remaining quota is filled.
+            </p>
+
+            <!-- ACTION BUTTONS -->
             <div class="action-buttons">
+
+              <!-- STATUS 1: EVENT SUDAH SELESAI -->
               <AppButton
                 v-if="event.done"
                 variant="secondary"
@@ -173,6 +171,7 @@ function registerEvent() {
                 Registration Closed
               </AppButton>
 
+              <!-- STATUS 2: SUDAH TERDAFTAR -->
               <div
                 v-else-if="isRegistered"
                 class="registered-action-group"
@@ -186,13 +185,14 @@ function registerEvent() {
                 </AppButton>
 
                 <router-link
-                  :to="`/browse/your-events/${event.id}`"
+                  :to="'/browse/your-events/' + event.id"
                   class="view-receipt-link"
                 >
                   View Your Ticket Receipt &rarr;
                 </router-link>
               </div>
 
+              <!-- STATUS 3: KUOTA HABIS -->
               <AppButton
                 v-else-if="event.quota <= 0"
                 variant="secondary"
@@ -202,49 +202,61 @@ function registerEvent() {
                 Sold Out
               </AppButton>
 
+              <!-- STATUS 4: REGISTRASI TERSEDIA -->
               <AppButton
                 v-else
                 variant="primary"
                 class="btn-register"
-                @click="registerEvent"
+                @click="router.push(`/browse/events/${event.id}/register`)"
               >
                 Register Now
               </AppButton>
+
             </div>
 
+            <!-- REMAINING SEATS -->
             <p
               v-if="!event.done && !isRegistered && event.quota > 0"
               class="spots"
             >
               {{ event.quota }} seats available
             </p>
+
           </AppCard>
         </aside>
-      </div>
-    </template>
 
-    <!-- EVENT NOT FOUND -->
-    <div v-else class="not-found-card">
+      </div>
+    </div>
+
+    <!-- KONDISI 3: EVENT TIDAK DITEMUKAN -->
+    <div
+      v-else-if="!loading"
+      class="not-found-card"
+    >
       <h2>404 - Event Not Found</h2>
 
       <p>
-        The event you are looking for is unavailable
-        or has been removed by the organizer.
+        {{
+          error ||
+          'The event you are looking for is unavailable or has been removed by the organizer.'
+        }}
       </p>
 
       <AppButton
         variant="primary"
-        @click="goBack"
+        @click="router.push('/browse/events')"
       >
         Back to Event Catalog
       </AppButton>
     </div>
+
   </div>
 </template>
 
 <style scoped>
+/* MAIN PAGE */
 .event-detail-page {
-  animation: fadeIn 0.5s ease;
+  width: 100%;
 }
 
 /* BACK BUTTON */
@@ -256,34 +268,41 @@ function registerEvent() {
   margin-bottom: var(--space-6);
   color: var(--text-muted);
   font-weight: 500;
-  padding: 0;
-  transition: color 0.2s ease;
 }
 
 .btn-back:hover {
   color: var(--primary);
 }
 
-/* EVENT HEADER */
+/* LOADING STATE */
+.loading-state {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-state p {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* DETAIL HEADER */
 .detail-header {
   background: var(--bg-light);
   border-radius: var(--space-4);
   border: 1px solid var(--border-color);
-  padding: var(--space-12);
+  padding: var(--space-12) var(--space-8);
   margin-bottom: var(--space-8);
 }
 
-.header-content {
-  max-width: 800px;
-}
-
-/* HEADER TAGS */
 .header-tags {
   display: flex;
   gap: var(--space-3);
   align-items: center;
-  flex-wrap: wrap;
   margin-bottom: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .event-tag {
@@ -314,7 +333,7 @@ function registerEvent() {
 }
 
 .status-soldout {
-  background: #ffe2e2;
+  background: #fee2e2;
   color: #b91c1c;
 }
 
@@ -325,17 +344,17 @@ function registerEvent() {
 
 /* EVENT TITLE */
 .detail-header h1 {
-  color: var(--text-main);
   font-size: 2.8rem;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
   line-height: 1.2;
+  color: var(--text-main);
 }
 
-/* EVENT META */
+/* EVENT META INFORMATION */
 .meta-info {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-6);
+  flex-wrap: wrap;
 }
 
 .meta-item {
@@ -348,19 +367,15 @@ function registerEvent() {
   color: var(--text-main);
 }
 
-/* ASYMMETRICAL LAYOUT */
+/* ASYMMETRICAL GRID */
 .grid-asymmetric {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: var(--space-12);
 }
 
-.main-desc {
-  min-width: 0;
-}
-
+/* MAIN DESCRIPTION */
 .main-desc h2 {
-  color: var(--text-main);
   margin-bottom: var(--space-4);
   font-size: 1.8rem;
   border-left: 4px solid var(--primary);
@@ -371,58 +386,25 @@ function registerEvent() {
   color: var(--text-muted);
   line-height: 1.8;
   margin-bottom: var(--space-6);
-  font-size: 1.05rem;
-  white-space: pre-line;
+  font-size: 1.1rem;
 }
 
-/* EVENT AGENDA */
-.agenda-title {
-  margin-top: var(--space-12);
-}
-
-.agenda-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.agenda-list li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--border-color);
-  color: var(--text-muted);
-  font-size: 1.05rem;
-}
-
-.agenda-list li strong {
-  display: inline-block;
-  min-width: 100px;
-  color: var(--text-main);
-}
-
-/* SIDEBAR */
-.sidebar {
-  min-width: 0;
-}
-
-/* STICKY PANEL */
-.sticky-pane {
-  position: sticky;
-  top: 100px;
-}
-
-/* REGISTRATION CARD */
+/* TICKET CARD */
 .ticket-card {
   padding: var(--space-8);
   text-align: center;
 }
 
+/* STICKY SIDEBAR */
+.sticky-pane {
+  position: sticky;
+  top: 100px;
+}
+
 .ticket-card h3 {
   font-size: 1.4rem;
-  color: var(--text-main);
   margin-bottom: var(--space-3);
+  color: var(--text-main);
 }
 
 .ticket-desc {
@@ -432,13 +414,17 @@ function registerEvent() {
   font-size: 0.95rem;
 }
 
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  width: 100%;
+.ticket-desc.text-success {
+  color: #15803d;
+  font-weight: 500;
 }
 
+.ticket-desc.text-warning {
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+/* REGISTER BUTTON */
 .btn-register {
   width: 100%;
 }
@@ -456,6 +442,7 @@ function registerEvent() {
   opacity: 1;
 }
 
+/* REGISTERED ACTION GROUP */
 .registered-action-group {
   display: flex;
   flex-direction: column;
@@ -476,6 +463,7 @@ function registerEvent() {
   text-decoration: underline;
 }
 
+/* REMAINING SEATS */
 .spots {
   margin-top: var(--space-4);
   color: #27ae60;
@@ -502,63 +490,18 @@ function registerEvent() {
   margin-bottom: var(--space-6);
 }
 
-/* ANIMATION */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* RESPONSIVE */
 @media (max-width: 900px) {
   .grid-asymmetric {
     grid-template-columns: 1fr;
   }
 
-  .detail-header {
-    padding: var(--space-8);
-  }
-
-  .detail-header h1 {
-    font-size: 2.2rem;
-  }
-
   .sticky-pane {
     position: static;
   }
-}
-
-@media (max-width: 600px) {
-  .detail-header {
-    padding: var(--space-6);
-  }
 
   .detail-header h1 {
-    font-size: 1.8rem;
-  }
-
-  .meta-info {
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .grid-asymmetric {
-    gap: var(--space-8);
-  }
-
-  .ticket-card {
-    padding: var(--space-6);
-  }
-
-  .agenda-list li {
-    flex-direction: column;
-    gap: 4px;
+    font-size: 2rem;
   }
 }
 </style>

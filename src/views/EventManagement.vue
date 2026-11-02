@@ -1,6 +1,6 @@
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEvents } from '@/composables/useEvents'
 import AppModal from '@/components/ui/AppModal.vue'
@@ -16,77 +16,95 @@ const {
   createEvent,
   completeEvent,
   deleteEvent,
+  fetchEvents,
+  loading,
+  error,
 } = useEvents()
 
-// Tab: active, create, completed
+// TAB STATE
 const currentTab = ref('active')
 
-// Notification state
-const errorMessage = ref('')
-const successMessage = ref('')
-
-// Confirmation modal state
+// MODAL STATE
 const isModalOpen = ref(false)
 const modalAction = ref('complete')
 const selectedEvent = ref(null)
+const isProcessingAction = ref(false)
 
+// FORM STATE
+const createFormRef = ref(null)
+const isSubmitting = ref(false)
+
+// FETCH DATA FROM API
+onMounted(async () => {
+  await fetchEvents()
+})
+
+// OPEN COMPLETE MODAL
 const handleOpenCompleteModal = (event) => {
   selectedEvent.value = event
   modalAction.value = 'complete'
   isModalOpen.value = true
 }
 
+// OPEN DELETE MODAL
 const handleOpenDeleteModal = (event) => {
   selectedEvent.value = event
   modalAction.value = 'delete'
   isModalOpen.value = true
 }
 
-const handleConfirmModal = () => {
+// CONFIRM MODAL ACTION
+const handleConfirmModal = async () => {
   if (!selectedEvent.value) return
 
-  if (modalAction.value === 'complete') {
-    completeEvent(selectedEvent.value.id)
-  } else if (modalAction.value === 'delete') {
-    deleteEvent(selectedEvent.value.id)
-  }
-
-  isModalOpen.value = false
-  selectedEvent.value = null
-}
-
-const handleCancelModal = () => {
-  isModalOpen.value = false
-  selectedEvent.value = null
-}
-
-const handleCreateEvent = (eventData) => {
-  errorMessage.value = ''
-  successMessage.value = ''
+  isProcessingAction.value = true
 
   try {
-    createEvent(eventData)
-    successMessage.value =
-      'Event published successfully and is now live!'
-    currentTab.value = 'active'
-
-    setTimeout(() => {
-      successMessage.value = ''
-    }, 3000)
-  } catch (error) {
-    errorMessage.value =
-      'Unable to publish the event. Please try again.'
-    console.error('Failed to create event:', error)
+    if (modalAction.value === 'complete') {
+      await completeEvent(selectedEvent.value.id)
+    } else if (modalAction.value === 'delete') {
+      await deleteEvent(selectedEvent.value.id)
+    }
+  } catch (err) {
+    alert(err.message || 'Terjadi kesalahan saat memproses event.')
+  } finally {
+    isProcessingAction.value = false
+    isModalOpen.value = false
+    selectedEvent.value = null
   }
 }
 
-const handleCancelCreate = () => {
-  currentTab.value = 'active'
+// CANCEL MODAL
+const handleCancelModal = () => {
+  if (isProcessingAction.value) return
+
+  isModalOpen.value = false
+  selectedEvent.value = null
+}
+
+// CREATE NEW EVENT
+const handleCreateEvent = async (eventData) => {
+  isSubmitting.value = true
+
+  try {
+    await createEvent(eventData)
+
+    if (createFormRef.value) {
+      createFormRef.value.resetForm()
+    }
+
+    currentTab.value = 'active'
+  } catch (err) {
+    alert(err.message || 'Gagal menyimpan acara ke server REST API.')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
 <template>
   <div class="event-management-page">
+
     <!-- PAGE HEADER -->
     <div class="page-header">
       <div>
@@ -106,6 +124,7 @@ const handleCancelCreate = () => {
 
     <!-- TAB NAVIGATION -->
     <div class="tabs-container">
+
       <button
         :class="['tab-btn', { active: currentTab === 'active' }]"
         @click="currentTab = 'active'"
@@ -126,23 +145,16 @@ const handleCancelCreate = () => {
       >
         ✅ Completed Events ({{ completedEvents.length }})
       </button>
+
     </div>
 
-    <!-- NOTIFICATIONS -->
+    <!-- ERROR NOTIFICATION -->
     <div
-      v-if="errorMessage"
+      v-if="error"
       class="alert-box alert-error"
       role="alert"
     >
-      ⚠️ {{ errorMessage }}
-    </div>
-
-    <div
-      v-if="successMessage"
-      class="alert-box alert-success"
-      role="status"
-    >
-      🎉 {{ successMessage }}
+      ⚠️ {{ error }}
     </div>
 
     <!-- TAB 1: ACTIVE EVENTS -->
@@ -150,8 +162,18 @@ const handleCancelCreate = () => {
       v-if="currentTab === 'active'"
       class="tab-pane"
     >
+
+      <!-- LOADING STATE -->
       <div
-        v-if="activeEvents.length > 0"
+        v-if="loading && activeEvents.length === 0"
+        class="empty-state"
+      >
+        <h3>Loading events from server...</h3>
+      </div>
+
+      <!-- EVENT LIST -->
+      <div
+        v-else-if="activeEvents.length > 0"
         class="events-grid"
       >
         <OrganizerEventCard
@@ -164,12 +186,15 @@ const handleCancelCreate = () => {
         />
       </div>
 
+      <!-- EMPTY STATE -->
       <div
         v-else
         class="empty-state"
       >
         <div class="empty-icon">📅</div>
+
         <h3>No Active Events</h3>
+
         <p>
           All events have ended or none have been created yet.
           Please create a new event.
@@ -182,6 +207,7 @@ const handleCancelCreate = () => {
           Create Event Now
         </AppButton>
       </div>
+
     </section>
 
     <!-- TAB 2: CREATE EVENT -->
@@ -190,8 +216,10 @@ const handleCancelCreate = () => {
       class="tab-pane"
     >
       <EventCreateForm
+        ref="createFormRef"
+        :submitting="isSubmitting"
         @submit="handleCreateEvent"
-        @cancel="handleCancelCreate"
+        @cancel="currentTab = 'active'"
       />
     </section>
 
@@ -200,6 +228,7 @@ const handleCancelCreate = () => {
       v-if="currentTab === 'completed'"
       class="tab-pane"
     >
+
       <div
         v-if="completedEvents.length > 0"
         class="events-grid"
@@ -209,21 +238,24 @@ const handleCancelCreate = () => {
           :key="item.id"
           :event="item"
           :is-completed="true"
-          @view-detail="(id) => router.push(`/browse/events/${id}`)"
           @delete="handleOpenDeleteModal"
         />
       </div>
 
+      <!-- EMPTY STATE -->
       <div
         v-else
         class="empty-state"
       >
         <div class="empty-icon">🗃️</div>
+
         <h3>No Completed Events</h3>
+
         <p>
           Events marked as completed will be archived here permanently.
         </p>
       </div>
+
     </section>
 
     <!-- CONFIRMATION MODAL -->
@@ -247,11 +279,15 @@ const handleCancelCreate = () => {
       cancel-text="Cancel"
       :variant="modalAction === 'complete' ? 'success' : 'danger'"
       :badge-text="
-        modalAction === 'complete' ? 'CONFIRMATION' : 'WARNING'
+        modalAction === 'complete'
+          ? 'CONFIRMATION'
+          : 'WARNING'
       "
+      :loading="isProcessingAction"
       @confirm="handleConfirmModal"
       @close="handleCancelModal"
     />
+
   </div>
 </template>
 
@@ -282,13 +318,14 @@ const handleCancelCreate = () => {
   font-size: 1rem;
 }
 
-/* TAB SYSTEM */
+/* TAB NAVIGATION */
 .tabs-container {
   display: flex;
   gap: var(--space-3);
   border-bottom: 2px solid var(--border-color);
   margin-bottom: var(--space-8);
   padding-bottom: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .tab-btn {
@@ -313,7 +350,7 @@ const handleCancelCreate = () => {
   color: white;
 }
 
-/* EVENT GRID */
+/* EVENTS GRID */
 .events-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -328,6 +365,7 @@ const handleCancelCreate = () => {
   background: white;
   border: 1px dashed var(--border-color);
   border-radius: var(--space-4);
+  margin-bottom: var(--space-12);
 }
 
 .empty-icon {
@@ -345,7 +383,7 @@ const handleCancelCreate = () => {
   margin-bottom: var(--space-6);
 }
 
-/* ALERTS */
+/* ALERT */
 .alert-box {
   padding: var(--space-3) var(--space-4);
   border-radius: 8px;
@@ -360,12 +398,6 @@ const handleCancelCreate = () => {
   border: 1px solid #ffa8a8;
 }
 
-.alert-success {
-  background: #d3f9d8;
-  color: #2b8a3e;
-  border: 1px solid #b2f2bb;
-}
-
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .page-header {
@@ -374,11 +406,12 @@ const handleCancelCreate = () => {
   }
 
   .tabs-container {
-    overflow-x: auto;
+    gap: 8px;
   }
 
   .tab-btn {
-    white-space: nowrap;
+    padding: 10px 14px;
+    font-size: 0.9rem;
   }
 
   .events-grid {

@@ -1,8 +1,8 @@
-
+```vue
 <script setup>
 import AppCard from '@/components/ui/AppCard.vue'
 
-defineProps({
+const props = defineProps({
   event: {
     type: Object,
     required: true,
@@ -13,40 +13,25 @@ defineProps({
   },
 })
 
-defineEmits(['view-detail', 'complete', 'delete'])
+const emit = defineEmits(['view-detail', 'complete', 'delete'])
 </script>
 
 <template>
-  <AppCard
-    :class="[
-      'organizer-event-card',
-      { 'card-completed': isCompleted },
-    ]"
-  >
+  <AppCard :class="['organizer-event-card', { 'card-completed': isCompleted }]">
     <div class="card-header">
       <span class="category-badge">{{ event.cat }}</span>
 
-      <span
-        :class="[
-          'status-badge',
-          isCompleted ? 'status-completed' : 'status-active',
-        ]"
-      >
+      <span :class="['status-badge', isCompleted ? 'status-completed' : 'status-active']">
         {{ isCompleted ? 'Completed' : 'Active' }}
       </span>
     </div>
 
-    <h3
-      :class="[
-        'event-title',
-        { 'text-strike': isCompleted },
-      ]"
-    >
+    <h3 :class="['event-title', { 'text-strike': isCompleted }]">
       {{ event.title }}
     </h3>
 
     <p class="event-meta">
-      🗓️ {{ event.date }} &bull; {{ event.loc }}
+      📅 {{ event.date }} &bull; 📍 {{ event.loc }}
     </p>
 
     <p class="event-desc">{{ event.desc }}</p>
@@ -58,25 +43,25 @@ defineEmits(['view-detail', 'complete', 'delete'])
     <div class="card-actions">
       <template v-if="!isCompleted">
         <button
-          class="btn-action btn-detail"
           type="button"
-          @click="$emit('view-detail', event.id)"
+          class="btn-action btn-detail"
+          @click="emit('view-detail', event.id)"
         >
           👁️ View Details
         </button>
 
         <button
-          class="btn-action btn-complete"
           type="button"
-          @click="$emit('complete', event)"
+          class="btn-action btn-complete"
+          @click="emit('complete', event)"
         >
           ✅ Complete Event
         </button>
 
         <button
-          class="btn-action btn-delete"
           type="button"
-          @click="$emit('delete', event)"
+          class="btn-action btn-delete"
+          @click="emit('delete', event)"
         >
           🗑️ Delete
         </button>
@@ -84,9 +69,9 @@ defineEmits(['view-detail', 'complete', 'delete'])
 
       <template v-else>
         <button
-          class="btn-action btn-delete"
           type="button"
-          @click="$emit('delete', event)"
+          class="btn-action btn-delete"
+          @click="emit('delete', event)"
         >
           🗑️ Delete from Archive
         </button>
@@ -107,7 +92,6 @@ defineEmits(['view-detail', 'complete', 'delete'])
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
 
@@ -140,9 +124,8 @@ defineEmits(['view-detail', 'complete', 'delete'])
 
 .event-title {
   font-size: 1.3rem;
-  margin: 0 0 var(--space-2);
+  margin-bottom: var(--space-2);
   color: var(--text-main);
-  overflow-wrap: anywhere;
 }
 
 .text-strike {
@@ -158,15 +141,14 @@ defineEmits(['view-detail', 'complete', 'delete'])
 .event-meta {
   font-size: 0.9rem;
   color: var(--text-muted);
-  margin: 0 0 var(--space-3);
-  line-height: 1.5;
+  margin-bottom: var(--space-3);
 }
 
 .event-desc {
   font-size: 0.95rem;
   color: var(--text-muted);
   line-height: 1.6;
-  margin: 0 0 var(--space-6);
+  margin-bottom: var(--space-6);
   flex-grow: 1;
 }
 
@@ -174,9 +156,8 @@ defineEmits(['view-detail', 'complete', 'delete'])
   background: #f1f3f5;
   color: #495057;
   padding: var(--space-3);
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.85rem;
-  line-height: 1.5;
   margin-bottom: var(--space-4);
 }
 
@@ -199,10 +180,6 @@ defineEmits(['view-detail', 'complete', 'delete'])
   background: white;
   transition: all 0.2s;
   white-space: nowrap;
-}
-
-.btn-detail {
-  color: var(--text-main);
 }
 
 .btn-detail:hover {
@@ -232,24 +209,14 @@ defineEmits(['view-detail', 'complete', 'delete'])
   color: white;
 }
 
-.btn-action:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-@media (max-width: 480px) {
-  .organizer-event-card {
-    padding: var(--space-4);
-  }
-
+@media (max-width: 768px) {
   .card-actions {
     flex-direction: column;
   }
 
   .btn-action {
     width: 100%;
-    flex: auto;
-    white-space: normal;
   }
 }
 </style>
+```

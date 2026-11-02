@@ -1,6 +1,5 @@
-
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEvents } from '@/composables/useEvents'
 
@@ -11,80 +10,100 @@ import AppButton from '@/components/ui/AppButton.vue'
 
 const router = useRouter()
 
-// Mengambil event aktif dan fungsi pengecekan registrasi
-const { activeEvents, isUserRegistered } = useEvents()
+// MENGONSUMSI SINGLE SOURCE OF TRUTH (REST API & State Reaktif)
+const { activeEvents, isUserRegistered, loading, error, fetchEvents } = useEvents()
 
-// Search dan category filter
 const searchQuery = ref('')
 const selectedCategory = ref('All')
 
-const categories = [
-  'All',
-  'Workshop',
-  'Meetup',
-  'Competition',
-  'Seminar',
-  'Conference',
-]
+const categories = ['All', 'Workshop', 'Meetup', 'Competition', 'Seminar', 'Conference']
 
-// Filter event aktif secara reaktif
+// FILTERING REAKTIF TERHADAP DATA STATE AKTIF
 const filteredEvents = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-
   return activeEvents.value.filter((event) => {
-    const title = (event.title || '').toLowerCase()
-    const location = (event.loc || '').toLowerCase()
-    const category = (event.cat || '').toLowerCase()
-    const description = (event.desc || '').toLowerCase()
-
-    const matchSearch =
-      title.includes(query) ||
-      location.includes(query) ||
-      category.includes(query) ||
-      description.includes(query)
-
-    const matchCategory =
-      selectedCategory.value === 'All' ||
-      event.cat === selectedCategory.value
-
-    return matchSearch && matchCategory
+    const titleMatch = (event.title || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+    const locMatch = (event.loc || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+    const matchSearch = titleMatch || locMatch
+    const matchCat = selectedCategory.value === 'All' || event.cat === selectedCategory.value
+    return matchSearch && matchCat
   })
 })
 
-// Navigasi ke halaman detail event
-function handleViewDetail(id) {
+const handleViewDetail = (id) => {
   router.push(`/browse/events/${id}`)
 }
+
+// PANGGIL REST API SAAT HALAMAN PERTAMA KALI DIBUKA (LIFECYCLE ONMOUNTED)
+onMounted(() => {
+  fetchEvents()
+})
 </script>
 
 <template>
   <div class="event-list-page">
-    <!-- HEADER -->
     <div class="header-section">
-      <h2 class="section-title">
-        Upcoming Events
-      </h2>
-
+      <div class="header-top">
+        <h2 class="section-title">Upcoming Events</h2>
+        <button
+          v-if="!loading"
+          class="btn-refresh"
+          title="Muat Ulang Data dari Server"
+          @click="fetchEvents"
+        >
+          🔄 Muat Ulang
+        </button>
+      </div>
       <p class="section-desc">
         Discover workshops, seminars, tech meetups, and competitions near you.
       </p>
     </div>
 
-    <!-- SEARCH DAN FILTER KATEGORI -->
     <div class="filters-section">
       <SearchBar v-model="searchQuery" />
-
-      <CategoryFilter
-        :categories="categories"
-        v-model="selectedCategory"
-      />
+      <CategoryFilter :categories="categories" v-model="selectedCategory" />
     </div>
 
-    <!-- GRID EVENT AKTIF -->
-    <div
-      v-if="filteredEvents.length > 0"
-      class="event-grid"
-    >
+    <!-- 1. LOADING STATE (SKELETON CARDS SHIMMER) -->
+    <div v-if="loading" class="event-grid">
+      <div v-for="n in 6" :key="n" class="skeleton-card">
+        <div class="skeleton-meta">
+          <div class="skeleton-line skeleton-date"></div>
+          <div class="skeleton-pill"></div>
+        </div>
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-loc"></div>
+        <div class="skeleton-line skeleton-desc"></div>
+        <div class="skeleton-line skeleton-desc short"></div>
+      </div>
+    </div>
+
+    <!-- 2. ERROR STATE (DISERTAI TOMBOL MUAT ULANG / RETRY) -->
+    <div v-else-if="error" class="error-state">
+      <div class="error-badge">NETWORK ERROR</div>
+      <h3>Gagal Memuat Data Acara</h3>
+      <p>{% raw %}{{ error }}{% endraw %}</p>
+      <div class="error-action">
+        <AppButton variant="primary" @click="fetchEvents"> 🔄 Muat Ulang Produk & Acara </AppButton>
+      </div>
+    </div>
+
+    <!-- 3. EMPTY STATE (KATALOG KOSONG) -->
+    <div v-else-if="filteredEvents.length === 0" class="empty-state">
+      <div class="empty-badge">CATALOG EMPTY</div>
+      <h3>No Events Available Yet</h3>
+      <p>
+        There are currently no active events scheduled. Are you an organizer? Publish and manage
+        your first event today through the Dashboard!
+      </p>
+      <div class="empty-action">
+        <AppButton variant="primary" @click="router.push('/dashboard')">
+          Go to Organizer Dashboard &rarr;
+        </AppButton>
+      </div>
+    </div>
+
+    <!-- 4. DATA / SUCCESS STATE (GRID EVENT RESMI DARI REST API) -->
+    <div v-else class="event-grid">
       <EventCard
         v-for="event in filteredEvents"
         :key="event.id"
@@ -92,38 +111,6 @@ function handleViewDetail(id) {
         :is-registered="isUserRegistered(event.id)"
         @view-detail="handleViewDetail"
       />
-    </div>
-
-    <!-- EMPTY STATE -->
-    <div
-      v-else
-      class="empty-state"
-    >
-      <div class="empty-badge">
-        CATALOG EMPTY
-      </div>
-
-      <h3>No Events Available Yet</h3>
-
-      <p>
-        {{
-          searchQuery.trim() || selectedCategory !== 'All'
-            ? 'No events match your search or selected category. Try changing your filters.'
-            : 'There are currently no active events scheduled. Are you an organizer? Publish and manage your first event today through the Dashboard!'
-        }}
-      </p>
-
-      <div
-        v-if="!searchQuery.trim() && selectedCategory === 'All'"
-        class="empty-action"
-      >
-        <AppButton
-          variant="primary"
-          @click="router.push('/dashboard')"
-        >
-          Go to Organizer Dashboard &rarr;
-        </AppButton>
-      </div>
     </div>
   </div>
 </template>
@@ -134,9 +121,14 @@ function handleViewDetail(id) {
   animation: fadeIn 0.4s ease;
 }
 
-/* HEADER */
 .header-section {
   margin-bottom: var(--space-8);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .section-title {
@@ -151,22 +143,37 @@ function handleViewDetail(id) {
   margin: 0;
 }
 
-/* SEARCH DAN FILTER */
-.filters-section {
-  margin-bottom: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.btn-refresh {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-/* ADAPTIVE EVENT GRID */
+.btn-refresh:hover {
+  background: var(--bg-gray);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.filters-section {
+  margin-bottom: var(--space-6);
+}
+
+/* ADAPTIVE GRID */
 .event-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-6);
 }
 
-/* FRIENDLY EMPTY STATE */
 .empty-state {
   text-align: center;
   padding: var(--space-12) var(--space-8);
@@ -207,37 +214,5 @@ function handleViewDetail(id) {
 .empty-action {
   display: flex;
   justify-content: center;
-}
-
-/* ANIMATION */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* RESPONSIVE */
-@media (max-width: 700px) {
-  .section-title {
-    font-size: 1.7rem;
-  }
-
-  .section-desc {
-    font-size: 0.95rem;
-  }
-
-  .event-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .empty-state {
-    padding: var(--space-8) var(--space-4);
-  }
 }
 </style>
