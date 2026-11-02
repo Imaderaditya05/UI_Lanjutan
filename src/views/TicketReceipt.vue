@@ -7,12 +7,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 const route = useRoute()
 const router = useRouter()
 
-const {
-  userRegistrations,
-  cancelRegistration,
-  getEventById,
-  events
-} = useEvents()
+const { userRegistrations, cancelRegistration, getEventById, events } = useEvents()
 
 const eventId = computed(() => Number(route.params.id))
 
@@ -20,15 +15,13 @@ const eventId = computed(() => Number(route.params.id))
 const activeTicket = computed(() => {
   if (!eventId.value) return null
 
-  const eventExists = events.value.some(
-    (event) => event.id === eventId.value
-  )
+  const eventExists = events.value.some((event) => event.id === eventId.value)
 
   if (!eventExists) return null
 
-  return userRegistrations.value.find(
-    (registration) => registration.eventId === eventId.value
-  ) || null
+  return (
+    userRegistrations.value.find((registration) => registration.eventId === eventId.value) || null
+  )
 })
 
 // MEMERIKSA STATUS EVENT SECARA REAKTIF
@@ -55,52 +48,35 @@ const handleConfirmCancel = () => {
 
 <template>
   <div class="ticket-receipt-page">
-    <button
-      class="btn-back"
-      @click="router.push('/browse/your-events')"
-    >
+    <button class="btn-back" @click="router.push('/browse/your-events')">
       &larr; Back to Your Events
     </button>
 
     <!-- JIKA TIKET TERDAFTAR DITEMUKAN -->
-    <div
-      v-if="activeTicket"
-      class="ticket-receipt-card"
-    >
+    <div v-if="activeTicket" class="ticket-receipt-card">
       <header class="receipt-header">
         <div class="header-status">
           <span
             :class="[
               'status-badge',
-              isEventDone(activeTicket.eventId)
-                ? 'badge-concluded'
-                : 'badge-confirmed'
+              isEventDone(activeTicket.eventId) ? 'badge-concluded' : 'badge-confirmed',
             ]"
           >
-            {{
-              isEventDone(activeTicket.eventId)
-                ? 'EVENT CONCLUDED'
-                : 'CONFIRMED PASS'
-            }}
+            {{ isEventDone(activeTicket.eventId) ? 'EVENT CONCLUDED' : 'CONFIRMED PASS' }}
           </span>
 
-          <span class="ref-code">
-            #{{ activeTicket.bookingCode }}
-          </span>
+          <span class="ref-code"> #{{ activeTicket.bookingCode }} </span>
         </div>
 
         <p class="receipt-meta-date">
           Registered on
           {{
             activeTicket.registeredAt
-              ? new Date(activeTicket.registeredAt).toLocaleDateString(
-                  'en-US',
-                  {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                  }
-                )
+              ? new Date(activeTicket.registeredAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
               : 'N/A'
           }}
         </p>
@@ -183,10 +159,7 @@ const handleConfirmCancel = () => {
 
       <!-- FOOTER ACTIONS -->
       <footer class="receipt-footer">
-        <button
-          class="btn-primary"
-          @click="router.push('/browse/your-events')"
-        >
+        <button class="btn-primary" @click="router.push('/browse/your-events')">
           Back to Your Events
         </button>
 
@@ -198,31 +171,19 @@ const handleConfirmCancel = () => {
           Cancel Registration
         </button>
 
-        <span
-          v-else
-          class="concluded-notice"
-        >
+        <span v-else class="concluded-notice">
           This event has concluded. Attendance record is archived.
         </span>
       </footer>
     </div>
 
     <!-- JIKA TIKET TIDAK DITEMUKAN -->
-    <div
-      v-else
-      class="notice-card"
-    >
+    <div v-else class="notice-card">
       <span class="notice-badge">NOT FOUND</span>
       <h2>Ticket Not Found</h2>
-      <p>
-        You do not have an active registration for this event,
-        or it has been cancelled.
-      </p>
+      <p>You do not have an active registration for this event, or it has been cancelled.</p>
 
-      <button
-        class="btn-primary"
-        @click="router.push('/browse/your-events')"
-      >
+      <button class="btn-primary" @click="router.push('/browse/your-events')">
         View Your Events List
       </button>
     </div>
